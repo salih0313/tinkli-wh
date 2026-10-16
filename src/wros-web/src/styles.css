@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-synthesis: none; text-rendering: optimizeLegibility; }
+body { margin: 0; min-width: 320px; }
+button, a { -webkit-tap-highlight-color: transparent; }
+@layer components {
+  .panel { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
+  .primary { @apply rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50; }
+  .secondary { @apply rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50; }
+  .text-button { @apply font-medium text-teal-700 underline underline-offset-4 disabled:opacity-50; }
+  .field { @apply block space-y-2 text-sm font-medium text-slate-700; }
+  input:not([type='checkbox']) { @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900; }
+  input[type='checkbox'] { @apply h-4 w-4 shrink-0 accent-teal-700; }
+  .check-label { @apply flex items-center gap-2 text-sm text-slate-700; }
+  .notice { @apply mb-5 rounded-lg border px-4 py-3 text-sm; }
+  .error { @apply border-red-200 bg-red-50 text-red-800; }
+  .success { @apply border-teal-200 bg-teal-50 text-teal-800; }
+  .badge { @apply rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700; }
+  .nav-link { @apply rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200; }
+  .nav-link.active { @apply bg-slate-900 text-white; }
+  th { @apply border-b border-slate-200 bg-slate-50 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500; }
+  td { @apply border-b border-slate-100 px-5 py-4 text-sm text-slate-700; }
+  table { @apply w-full; }
+  button, a, input, summary { @apply focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-600; }
+}
