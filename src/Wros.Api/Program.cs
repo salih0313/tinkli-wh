@@ -40,13 +40,15 @@ builder.Services.AddOptions<IntegrationOptions>().BindConfiguration("Integration
 
 builder.Services.AddDbContext<WrosDbContext>((services, options) =>
 {
-    // EF's --environment argument can override process environment variables.
-    // Check the actual host as well as the migration's own process-environment guard.
-    if (string.Equals(Environment.GetEnvironmentVariable("WROS_SEED_DEVELOPMENT_USERS")?.Trim(), "true", StringComparison.OrdinalIgnoreCase)
-        && !builder.Environment.IsDevelopment())
-        throw new InvalidOperationException("Demo users are forbidden outside Development. Clear WROS_SEED_DEVELOPMENT_USERS.");
     options.UseSqlServer(services.GetRequiredService<IOptions<DatabaseOptions>>().Value.DefaultConnection,
         sql => sql.CommandTimeout(10));
+    if (builder.Environment.IsDevelopment())
+    {
+        options.UseSeeding((context, _) => DevelopmentUserSeed.RunAsync((WrosDbContext)context,
+            services.GetRequiredService<Microsoft.AspNetCore.Identity.IPasswordHasher<AppUser>>(), CancellationToken.None).GetAwaiter().GetResult());
+        options.UseAsyncSeeding((context, _, cancellationToken) => DevelopmentUserSeed.RunAsync((WrosDbContext)context,
+            services.GetRequiredService<Microsoft.AspNetCore.Identity.IPasswordHasher<AppUser>>(), cancellationToken));
+    }
 });
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])

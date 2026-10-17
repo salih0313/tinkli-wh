@@ -1,12 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { mutate } from '../api/client'
 import { useSession } from '../auth/SessionContext'
 import { ErrorMessage, Field } from '../components/Form'
+import { Brand } from '../components/layout/AppShell'
+import { Button } from '../components/ui/Controls'
+import { Icon } from '../components/ui/Icon'
+import { PasswordInput } from '../components/forms/PasswordInput'
 
 export default function Login() {
   const { user, refresh } = useSession()
+  useEffect(() => { document.title = 'Sign in · WROS' }, [])
   const [error, setError] = useState<unknown>(null)
   const [busy, setBusy] = useState(false)
   if (user) return <Navigate to={user.mustChangePassword ? '/password' : '/'} replace />
@@ -22,18 +27,18 @@ export default function Login() {
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
   }
-  return <main className="flex min-h-screen items-center justify-center bg-slate-50 px-5 py-10">
-    <div className="panel w-full max-w-md p-8">
-      <p className="mb-8 font-bold tracking-widest text-teal-700">WROS</p>
-      <h1 className="text-3xl font-semibold">Sign in</h1>
-      <p className="mb-6 mt-2 text-sm text-slate-600">Warehouse receiving & inventory</p>
+  return <main className="login-page">
+    <aside className="login-story"><Brand /><div className="login-story-copy"><p className="eyebrow">Your operations, connected</p><h2>A clear view.<br />A confident team.</h2><p>One workspace for the people behind your warehouse operations.</p></div><div className="warehouse-graphic" aria-hidden="true"><Icon name="warehouse" /></div><p className="login-story-footer"><Icon name="shield" width="16" height="16" />Warehouse Receiving & Operations System</p></aside>
+    <section className="login-main" aria-labelledby="login-title"><div className="login-mobile-brand"><Brand /></div><div className="login-form-wrap">
+      <span className="login-lock"><Icon name="lock" /></span><p className="eyebrow">Welcome to WROS</p><h1 id="login-title">Sign in to your workspace</h1>
+      <p className="login-intro">Enter your account details to get started.</p>
       <form onSubmit={submit} className="space-y-5" aria-busy={busy}>
         <ErrorMessage error={error} />
-        <Field label="Username"><input name="username" autoComplete="username" required maxLength={256} autoFocus /></Field>
-        <Field label="Password"><input name="password" type="password" autoComplete="current-password" required maxLength={128} /></Field>
-        <button className="primary w-full" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        <Field label="Username"><input name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="Your username" required maxLength={256} /></Field>
+        <Field label="Password"><PasswordInput name="password" autoComplete="current-password" placeholder="Enter your password" required /></Field>
+        <Button type="submit" className="w-full" loading={busy} icon="arrow">{busy ? 'Signing in…' : 'Sign in'}</Button>
       </form>
-      <p className="mt-6 text-sm text-slate-500">Accounts are managed by your SuperAdmin. Contact them if you need access or a password reset.</p>
-    </div>
+      <p className="login-support">Need access or a password reset?<br />Contact your SuperAdmin for help with your account.</p>
+    </div><p className="login-footer">WROS · A workspace built for your operations</p></section>
   </main>
 }

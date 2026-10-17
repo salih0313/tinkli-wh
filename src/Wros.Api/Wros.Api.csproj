@@ -19,4 +19,10 @@
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Build the private local seed file when present; otherwise build the empty example. -->
+    <Compile Remove="Modules/Identity/DevelopmentSeedCredentials.example.cs" />
+    <Compile Include="Modules/Identity/DevelopmentSeedCredentials.example.cs"
+             Condition="!Exists('Modules/Identity/DevelopmentSeedCredentials.local.cs')" />
+  </ItemGroup>
 </Project>

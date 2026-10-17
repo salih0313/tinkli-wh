@@ -2,13 +2,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Wros.Api.Modules.Identity;
 
-public sealed record LoginRequest([Required, MaxLength(256)] string UserName, [Required, MaxLength(128)] string Password);
-public sealed record ChangePasswordRequest([Required, MaxLength(128)] string CurrentPassword, [Required, MaxLength(128)] string NewPassword);
+public sealed record LoginRequest([Required, MaxLength(256)] string UserName, [Required] string Password);
+public sealed record ChangePasswordRequest([Required] string CurrentPassword, [Required] string NewPassword);
 public sealed record CreateUserRequest([Required, RegularExpression(@"[a-zA-Z0-9._@+-]{3,64}")] string UserName,
-    [Required, MaxLength(128)] string Password, [Required, MinLength(1), MaxLength(6)] string[] Roles);
+    [Required] string Password, [Required, MinLength(1), MaxLength(6)] string[] Roles);
 public sealed record UpdateUserRequest(bool IsActive, [Required, MinLength(1), MaxLength(6)] string[] Roles,
     [Required] string ConcurrencyStamp);
-public sealed record ResetPasswordRequest([Required, MaxLength(128)] string NewPassword, [Required] string ConcurrencyStamp);
+public sealed record ResetPasswordRequest([Required] string NewPassword, [Required] string ConcurrencyStamp);
 public sealed record RolePermissionsRequest([Required, MaxLength(12)] string[] Permissions, [Required] string ConcurrencyStamp);
 public sealed record UserDto(Guid Id, string UserName, bool IsActive, bool MustChangePassword, bool IsLockedOut,
     DateTimeOffset? LockoutEnd, string[] Roles, string ConcurrencyStamp, DateTimeOffset CreatedAt);

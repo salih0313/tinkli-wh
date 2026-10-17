@@ -8,14 +8,14 @@ One .NET 10 controller API, SQL Server/EF Core 10 and a React/TypeScript/Vite/Ta
 
 The SPA makes same-origin `/api` requests. Local Vite forwards them to `https://localhost:7243`; it does not expose cookies to JavaScript. State changes, including login/logout, require a server-issued antiforgery cookie plus `X-CSRF-TOKEN`; the typed client fetches a token before each mutation. A production frontend/API must share one HTTPS origin; hosting is not implemented here. Local development uses `http://localhost:5173`, which supported browsers treat specially for Secure localhost cookies. If a browser rejects those cookies, use a trusted same-origin HTTPS development setup rather than disabling cookie security. Do not use a LAN address or `127.0.0.1` for the frontend in this setup.
 
-Permissions are database-driven and queried on each protected request. SuperAdmin always has full access; user/role administration additionally requires the SuperAdmin role even if a staff role is granted users.manage or roles.manage. All warehouse access remains global in v1. Owner-approved initial staff mapping: **inventory.view only for every staff role**. SuperAdmin may edit these grants from Roles. The data migration preserves edits.
+Permissions are database-driven and queried on each protected request. SuperAdmin always has full access; user/role administration additionally requires the SuperAdmin role even if a staff role is granted users.manage or roles.manage. All warehouse access remains global in v1. Owner-approved initial staff mapping: **inventory.view only for every staff role**. SuperAdmin may edit these grants from Roles. The role data migration preserves edits.
 
 ## Project structure and changed files
 
 ```text
 Wros.slnx / global.json / .config/dotnet-tools.json    Phase 0 foundation retained
 src/Wros.Api/
-  Program.cs                                         Auth middleware and guards
+  Program.cs                                         Auth middleware, guards and EF seeding callbacks
   Wros.Api.csproj / packages.lock.json                Identity EF package added
   appsettings.json / appsettings.example.json         Session configuration; no seed account credentials
   Controllers/
@@ -30,6 +30,9 @@ src/Wros.Api/
     PermissionCatalog.cs / PermissionAuthorization.cs Central grants and policies
     CookieSessionEvents.cs / IdentityRegistration.cs  Cookie, CSRF, lockout and rate-limit setup
     SessionService.cs                                Authentication application service
+    DevelopmentUserSeed.cs                           Development-only seed on EF database update
+    DevelopmentSeedCredentials.example.cs             Empty tracked C# credential template
+    DevelopmentSeedCredentials.local.cs               Private editable C# passwords (Git ignored)
     UserAdministration.cs / RoleAdministration.cs     Transactional administration services
     AuthorizationAuditHandler.cs                     Safe authorization-denial audit
     README.md
@@ -43,8 +46,8 @@ src/Wros.Api/
     Persistence/Migrations/
       20261016110833_InitialFoundation*                Preserved unchanged
       20261016122831_Phase1Identity*                   New additive migration + designer
-      20261016155337_SeedIdentityData*                 Role/permission/Development user data migration
-      20261016164608_SeedMissingDevelopmentUsers*      Repairs skipped Development users without a reset
+      20261016155337_SeedIdentityData*                 Role/permission data migration
+      20261016164608_SeedMissingDevelopmentUsers*      Compatibility migration ID; user seed is repeatable
       WrosDbContextModelSnapshot.cs                    Updated model snapshot
 src/wros-web/
   package.json / package-lock.json                    React Router added
@@ -123,73 +126,57 @@ SQL encryption, trusted server certificates, HTTPS CORS origins and explicit hos
 
 Environment variables override User Secrets. To remove an obsolete shell connection override, use `unset ConnectionStrings__DefaultConnection` in zsh/bash, or `Remove-Item Env:ConnectionStrings__DefaultConnection -ErrorAction SilentlyContinue` in PowerShell.
 
-## Apply migrations and seed users
+## Apply migrations and seed users directly from C#
 
-**User creation runs in EF data migrations, not appsettings or a separate seed command.** `20261016155337_SeedIdentityData` seeds definitions and optional accounts; `20261016164608_SeedMissingDevelopmentUsers` creates missing Development accounts when the earlier optional step was skipped. The already-applied Phase 0/Phase 1 schema migrations are unchanged. Running `dotnet ef database update` applies the pending data migration in the normal EF transaction and records it in migration history.
+The owner requested file-based Development seeding with **no opt-in flag, no seed environment variables and no appsettings passwords**. Enter the two passwords in:
 
-The data migration creates the six roles/twelve permissions and initial grants in every environment, skipping existing definitions and preserving existing staff-role grants. Development accounts are explicitly opt-in and use fixed usernames **wros.admin** and **wros.staff**. Passwords come directly from the migration process environment, never appsettings or committed constants. Password hashing uses ASP.NET Core Identity; plaintext passwords never enter the SQL operations or audit records.
+```text
+src/Wros.Api/Modules/Identity/DevelopmentSeedCredentials.local.cs
+```
 
-### First application with Development users — macOS zsh
+This local C# file is ignored by Git. Its two fields are `SuperAdminPassword` and `WarehouseStaffPassword`; the account names are wros.admin and wros.staff. The tracked `DevelopmentSeedCredentials.example.cs` contains empty fields so clean clones still build. If the local file is absent, copy the example once:
 
-Set these variables **before** applying the new data migration. Password prompts keep plaintext values out of shell history.
+macOS:
 
 ```sh
-export DOTNET_ENVIRONMENT=Development
-export WROS_SEED_DEVELOPMENT_USERS=true
-read -rs 'WROS_SEED_SUPERADMIN_PASSWORD?Development SuperAdmin password: '
-printf '\n'
-export WROS_SEED_SUPERADMIN_PASSWORD
-read -rs 'WROS_SEED_WAREHOUSESTAFF_PASSWORD?Development WarehouseStaff password: '
-printf '\n'
-export WROS_SEED_WAREHOUSESTAFF_PASSWORD
+cp src/Wros.Api/Modules/Identity/DevelopmentSeedCredentials.example.cs src/Wros.Api/Modules/Identity/DevelopmentSeedCredentials.local.cs
+```
 
+PowerShell:
+
+```powershell
+Copy-Item src/Wros.Api/Modules/Identity/DevelopmentSeedCredentials.example.cs src/Wros.Api/Modules/Identity/DevelopmentSeedCredentials.local.cs
+```
+
+Edit the local file and set both passwords. Use at least 8 characters. Keep the example empty; passwords are never placed in tracked migrations, appsettings, or generated model snapshots.
+
+Then run this one command from the repository root:
+
+```sh
 dotnet ef database update --project src/Wros.Api --startup-project src/Wros.Api -- --environment Development
 ```
 
-Passwords require 8–128 characters, uppercase, lowercase, a number, a symbol and at least four distinct characters. Missing/weak credentials or enabling these accounts outside Development fails before the migration executes. `--environment Development` configures the host; explicitly setting DOTNET_ENVIRONMENT also supplies the migration's environment guard. For bash, replace each zsh read line with `read -r -s -p 'Password: ' WROS_SEED_SUPERADMIN_PASSWORD` or its WarehouseStaff variable equivalent.
+EF applies schema/role migrations and then invokes `Modules/Identity/DevelopmentUserSeed.cs` through its built-in UseSeeding/UseAsyncSeeding callbacks. The callbacks run **even when no migrations are pending**, so an already-applied migration cannot silently prevent missing user creation. The normal command builds the edited local C# file automatically; do not use --no-build after changing its passwords.
 
-After successful application, clear the temporary seed variables:
+Behavior:
 
-```sh
-unset WROS_SEED_DEVELOPMENT_USERS WROS_SEED_SUPERADMIN_PASSWORD WROS_SEED_WAREHOUSESTAFF_PASSWORD
-```
+- Development only; no Development user callback is registered outside Development.
+- Missing users are created atomically with Identity password hashes, role memberships and safe audit records. Plaintext passwords are not sent to SQL or audit logs.
+- Existing usernames are skipped. Passwords, activation and role assignments are never reset by rerunning database update or editing the local seed file. Use the authenticated account-management password flow for an existing account.
+- Missing/weak passwords for a missing account produce a clear error naming the local file. There is no silent skip and no default password. If both users already exist, no seed credentials are required.
+- Roles/permissions are still inserted by the role data migration in every environment, preserving edited staff grants. SeedMissingDevelopmentUsers retains its existing migration ID as a compatibility marker; actual Development user creation now runs in the EF callback. Schema migrations and existing database rows are preserved.
+- No automatic migration or seeding occurs when starting/debugging the API. No database reset or migration-history edit is needed.
+- Seed:Enabled stays false as a legacy flag; it does not control this file-based flow. Seed:SampleDataEnabled remains false until its future phase.
+- SQL migration scripts do not execute EF seeding callbacks; use the command above for local Development accounts. Production never creates these demo accounts.
 
-Keep DOTNET_ENVIRONMENT only if you want that shell to remain in Development; otherwise `unset DOTNET_ENVIRONMENT` too. Do not share environment dumps or passwords in chat.
-
-### First application with Development users — PowerShell
-
-```powershell
-$env:DOTNET_ENVIRONMENT = 'Development'
-$env:WROS_SEED_DEVELOPMENT_USERS = 'true'
-$wrosSecurePassword = Read-Host 'Development SuperAdmin password' -AsSecureString
-$env:WROS_SEED_SUPERADMIN_PASSWORD = [System.Net.NetworkCredential]::new('', $wrosSecurePassword).Password
-$wrosSecurePassword = Read-Host 'Development WarehouseStaff password' -AsSecureString
-$env:WROS_SEED_WAREHOUSESTAFF_PASSWORD = [System.Net.NetworkCredential]::new('', $wrosSecurePassword).Password
-try {
-    dotnet ef database update --project src/Wros.Api --startup-project src/Wros.Api -- --environment Development
-} finally {
-    Remove-Item Env:WROS_SEED_DEVELOPMENT_USERS, Env:WROS_SEED_SUPERADMIN_PASSWORD, Env:WROS_SEED_WAREHOUSESTAFF_PASSWORD -ErrorAction SilentlyContinue
-    Remove-Variable wrosSecurePassword
-}
-```
-
-### Migration behavior and verification
-
-- SeedIdentityData defaults to definitions only. The corrective migration requires explicit credentials when Development accounts are absent; existing accounts are preserved. Production never enables demo users.
-- **Applied migrations do not rerun:** if SeedIdentityData was applied without the flag, the corrective SeedMissingDevelopmentUsers migration is the next step. In Development it refuses to silently complete while either account is missing; set the flag and password variables using the prompts above, then run database update. Once both migrations are applied, repeated updates never reset passwords. Do not reset the database or edit migration history. In non-Development explicitly set DOTNET_ENVIRONMENT to the deployment environment; demo accounts are skipped there.
-- Existing usernames are skipped completely. Passwords, activation, role assignments and edited grants are never reset. Existing accounts seeded by the earlier workflow remain unchanged.
-- All inserts and corresponding safe audit records use EF's migration transaction. Down intentionally preserves security data and audit history; it never deletes real users or resets passwords.
-- Seed:SuperAdmin / Seed:WarehouseStaff configuration and IdentitySeeder/SeedIdentity are removed. Legacy Seed:Enabled must stay false; it does not control this migration. Seed:SampleDataEnabled remains false until its future phase.
-- No model HasData password hashes are stored in source/snapshots. When enabling Development users, transient SQL includes Identity password hashes. Keep EF/SQL sensitive logging disabled and do not commit/share generated Development seed SQL scripts. Generate production scripts with the demo flag unset, never reuse a Development seed script in production.
-
-After application:
+Verify and repeat safely:
 
 ```sh
 dotnet ef migrations list --project src/Wros.Api --startup-project src/Wros.Api -- --environment Development
 dotnet ef database update --project src/Wros.Api --startup-project src/Wros.Api -- --environment Development
 ```
 
-Expect InitialFoundation, Phase1Identity, SeedIdentityData and SeedMissingDevelopmentUsers applied. The second update makes no changes and requires no seed passwords. Future model changes get a new migration; never rewrite already-applied migrations or use EnsureCreated/database reset.
+Expect the existing four migration IDs applied and exactly the missing Development users inserted. The second update makes no password/role changes. No additional schema migration is required for the callback refactor. The previous opt-in/password environment variables are obsolete and ignored.
 
 | Role | Initial permissions | Default Development account |
 | --- | --- | --- |
@@ -202,7 +189,7 @@ Expect InitialFoundation, Phase1Identity, SeedIdentityData and SeedMissingDevelo
 
 Permissions: users.manage, roles.manage, suppliers.manage, products.manage, purchaseorders.manage, receiving.manage, inventory.view, inventory.adjust, inventory.transfer, outbound.manage, integration.manage, audit.view.
 
-SuperAdmin grants are fixed/full. Staff mappings are editable and additive across assigned roles. Granting users.manage/roles.manage to staff does **not** confer SuperAdmin administration privileges. Production user bootstrap remains an operational decision; this migration never creates demo administrators outside Development.
+SuperAdmin grants are fixed/full. Staff mappings are editable and additive across assigned roles. Granting users.manage/roles.manage to staff does **not** confer SuperAdmin administration privileges. Production user bootstrap remains an operational decision; the EF callbacks never create demo administrators outside Development.
 
 ## Run and debug
 
@@ -267,3 +254,5 @@ Complete [docs/phase-1-manual-checks.md](docs/phase-1-manual-checks.md), includi
 **Stop after Phase 1. Owner manual results and explicit approval are required before Phase 2.**
 
 References: [ASP.NET antiforgery](https://learn.microsoft.com/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0), [ASP.NET rate limiting](https://learn.microsoft.com/aspnet/core/performance/rate-limit?view=aspnetcore-10.0), [Identity security-stamp validation](https://source.dot.net/Microsoft.AspNetCore.Identity/SecurityStampValidator.cs.html).
+
+Seeding reference: [EF Core UseSeeding and UseAsyncSeeding](https://learn.microsoft.com/en-us/ef/core/modeling/data-seeding).

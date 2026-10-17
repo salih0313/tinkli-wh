@@ -62,3 +62,6 @@ Desktop.ini
 
 # ZIP archives
 *.[zZ][iI][pP]
+
+# Private Development account passwords (editable C# seed file)
+**/DevelopmentSeedCredentials.local.cs

@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { get } from '../api/client'
 import type { AuditEntry, Page } from '../api/types'
 import { ErrorMessage, Heading } from '../components/Form'
+import { Button, Badge } from '../components/ui/Controls'
+import { EmptyState, LoadingSkeleton } from '../components/feedback/States'
+import { Pagination } from '../components/data-display/Pagination'
+import { humanize } from '../lib/presentation'
 export default function Audit() {
   const [page, setPage] = useState(1)
   const [revision, setRevision] = useState(0)
@@ -15,13 +19,14 @@ export default function Audit() {
       .finally(() => { if (!abort.signal.aborted) setLoading(false) })
     return () => abort.abort()
   }, [page, revision])
-  return <><Heading title="Security audit" detail="Account, authentication and permission events. Timestamps are shown in UTC." />
-    <ErrorMessage error={error} /><button className="secondary mb-4" disabled={loading} onClick={() => setRevision(value => value + 1)}>Refresh audit</button>
-    {loading ? <p role="status">Loading audit…</p> : data?.items.length === 0 ? <p className="panel p-6">No audit entries yet.</p> : <div className="space-y-3">{data?.items.map(item => <article className="panel break-words p-5" key={item.id}>
-      <div className="flex flex-wrap justify-between gap-2"><h2 className="font-semibold">{item.action}</h2><time className="text-sm text-slate-500" dateTime={item.timestamp}>{new Date(item.timestamp).toISOString()}</time></div>
-      <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2"><div><dt className="text-slate-500">Actor</dt><dd className="break-all font-mono text-xs">{item.actorId ?? 'Anonymous / system'}</dd></div><div><dt className="text-slate-500">Entity</dt><dd className="break-all">{item.entity} {item.entityId}</dd></div><div className="sm:col-span-2"><dt className="text-slate-500">Correlation ID</dt><dd className="break-all font-mono text-xs">{item.correlationId}</dd></div></dl>
-      {(item.oldValues || item.newValues) && <details className="mt-3 text-sm"><summary className="cursor-pointer text-teal-700">Safe change details</summary>{item.oldValues && <pre className="mt-2 whitespace-pre-wrap break-all text-xs">Before: {item.oldValues}</pre>}{item.newValues && <pre className="mt-2 whitespace-pre-wrap break-all text-xs">After: {item.newValues}</pre>}</details>}
+  return <><Heading eyebrow="Administration" title="Security audit" detail="A clear record of account, authentication and permission activity. All times are UTC." action={<Button variant="secondary" icon="refresh" disabled={loading} onClick={() => setRevision(value => value + 1)}>Refresh audit</Button>} />
+    <ErrorMessage error={error} />
+    {loading ? <div className="panel"><LoadingSkeleton label="Loading audit…" /></div> : data?.items.length === 0 ? <div className="panel"><EmptyState title="No activity yet" detail="Account and security events will appear here as your team uses the workspace." icon="audit" /></div> : <div className="space-y-4">{data?.items.map(item => <article className="panel audit-card" key={item.id}>
+      <div className="flex flex-wrap justify-between items-center gap-3"><div className="flex flex-wrap items-center gap-3"><h2>{humanize(item.action)}</h2><Badge>{item.entity}</Badge></div><time dateTime={item.timestamp}>{new Date(item.timestamp).toISOString().replace('T', ' ').replace('Z', ' UTC')}</time></div>
+      <dl><div><dt>Actor</dt><dd className="font-mono">{item.actorId ?? 'Anonymous / system'}</dd></div><div><dt>Entity reference</dt><dd>{item.entity} {item.entityId}</dd></div><div className="sm:col-span-2"><dt>Correlation ID</dt><dd className="font-mono">{item.correlationId}</dd></div></dl>
+      {(item.oldValues || item.newValues) && <details className="mt-2"><summary>View change details</summary>{item.oldValues && <pre>Before: {item.oldValues}</pre>}{item.newValues && <pre>After: {item.newValues}</pre>}</details>}
     </article>)}</div>}
-    <div className="mt-5 flex items-center justify-between text-sm"><span>{data?.total ?? 0} entries · Page {page}</span><div className="flex gap-2"><button className="secondary" disabled={loading || page <= 1} onClick={() => setPage(value => value - 1)}>Previous</button><button className="secondary" disabled={loading || !data || page * 20 >= data.total} onClick={() => setPage(value => value + 1)}>Next</button></div></div>
+    {!loading && !data && !!error && <div className="panel"><EmptyState title="Audit unavailable" detail="Check the connection and use Refresh audit to try again." icon="alert" /></div>}
+    <Pagination page={page} total={data?.total ?? 0} noun="entries" disabled={loading} onPage={setPage} />
   </>
 }

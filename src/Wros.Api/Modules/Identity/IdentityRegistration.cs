@@ -17,7 +17,7 @@ public static class IdentityRegistration
     {
         services.AddOptions<WrosSessionOptions>().BindConfiguration("Authentication").ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<SeedOptions>().BindConfiguration("Seed")
-            .Validate(options => !options.Enabled, "User seeding now runs in the EF migration using WROS_SEED_DEVELOPMENT_USERS and secure environment credentials. Keep Seed:Enabled false.")
+            .Validate(options => !options.Enabled, "Development users are seeded by database update from DevelopmentSeedCredentials.local.cs. Keep the legacy Seed:Enabled flag false.")
             .Validate(options => !options.SampleDataEnabled, "Sample business data is not implemented in Phase 1.")
             .ValidateOnStart();
         services.AddDataProtection().SetApplicationName("Wros");
@@ -32,11 +32,11 @@ public static class IdentityRegistration
         services.AddIdentity<AppUser, AppRole>(options =>
         {
             options.Password.RequiredLength = 8;
-            options.Password.RequiredUniqueChars = 4;
-            options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequiredUniqueChars = 0;
+            options.Password.RequireDigit = false;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireNonAlphanumeric = false;
             options.Lockout.AllowedForNewUsers = true;
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
