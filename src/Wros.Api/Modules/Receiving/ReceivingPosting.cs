@@ -76,7 +76,7 @@ public sealed partial class ReceivingService
                 .GroupBy(key => oldWarehouses.TryGetValue(key.RackId, out var warehouse) ? warehouse : warehouses[key])
                 .Select(group => group.Sum(key => target.GetValueOrDefault(key) - old.GetValueOrDefault(key)));
             if (warehouseDeltas.Any(delta => delta != 0))
-                throw new ApiProblemException(400, "Rack corrections must preserve each warehouse's quantity. Warehouse-to-warehouse transfers are deferred.");
+                throw new ApiProblemException(400, "Rack corrections must preserve each warehouse's quantity. Use Warehouse transfers for completed interwarehouse moves.");
             foreach (var key in old.Keys.Concat(target.Keys).Distinct().OrderBy(x => x.RackId).ThenBy(x => x.LocationId))
             {
                 var delta = target.GetValueOrDefault(key) - old.GetValueOrDefault(key);

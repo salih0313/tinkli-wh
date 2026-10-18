@@ -15,6 +15,11 @@ import DeliveryNoteEditor from './pages/DeliveryNoteEditor'
 import DeliveryNoteDetails from './pages/DeliveryNoteDetails'
 import ReceiptCorrection from './pages/ReceiptCorrection'
 import ReceiptStock from './pages/ReceiptStock'
+import Inventory from './pages/Inventory'
+import InventoryDashboard from './pages/InventoryDashboard'
+import StockMovements from './pages/StockMovements'
+import StockTransactions from './pages/StockTransactions'
+import Integration from './pages/Integration'
 import MasterData from './pages/MasterData'
 import PurchaseOrders from './pages/PurchaseOrders'
 import PurchaseOrderEditor from './pages/PurchaseOrderEditor'
@@ -56,7 +61,10 @@ export default function App() {
         <Route path="/delivery-notes/:id/edit" element={<DeliveryNoteEditor key="edit" />} />
         <Route path="/delivery-notes/:id/correct" element={<ReceiptCorrection />} />
       </Route>
-      <Route element={<Access permission="inventory.view" />}><Route path="/receipt-stock" element={<ReceiptStock />} /></Route>
+      <Route element={<Access permission="inventory.view" />}><Route path="/receipt-stock" element={<ReceiptStock />} /><Route path="/inventory" element={<Inventory />} /><Route path="/inventory-overview" element={<InventoryDashboard />} /><Route path="/expiry" element={<Inventory expiryOnly />} /><Route path="/stock-movements" element={<StockMovements />} /></Route>
+      <Route element={<Access permission="outbound.manage" />}><Route path="/supplier-returns" element={<StockTransactions key="SupplierReturn" kind="SupplierReturn" />} /><Route path="/supplier-returns/:id" element={<StockTransactions key="SupplierReturn" kind="SupplierReturn" />} /></Route>
+      <Route element={<Access permission="inventory.adjust" />}><Route path="/disposals" element={<StockTransactions key="Disposal" kind="Disposal" />} /><Route path="/disposals/:id" element={<StockTransactions key="Disposal" kind="Disposal" />} /></Route>
+      <Route element={<Access permission="inventory.transfer" />}><Route path="/transfers" element={<StockTransactions key="Transfer" kind="Transfer" />} /><Route path="/transfers/:id" element={<StockTransactions key="Transfer" kind="Transfer" />} /></Route>
       <Route element={<Access permission="purchaseorders.manage" />}>
         <Route path="/purchase-orders" element={<PurchaseOrders />} />
         <Route path="/purchase-orders/new" element={<PurchaseOrderEditor key="new" />} />
@@ -74,6 +82,7 @@ export default function App() {
         <Route path="/areas/:parentId/racks" element={<MasterData key="racks" kind="racks" />} />
         <Route path="/racks/:parentId/locations" element={<MasterData key="locations" kind="locations" />} />
       </Route>
+      <Route element={<Access permission="integration.manage" />}><Route path="/integration" element={<Integration />} /></Route>
       <Route element={<Access permission="audit.view" />}><Route path="/audit" element={<Audit />} /></Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Route>

@@ -386,6 +386,245 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.ToTable("RolePermissions");
                 });
 
+            modelBuilder.Entity("Wros.Api.Modules.Integration.AssertionReplay", b =>
+                {
+                    b.Property<string>("ClientId")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("TokenIdHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ClientId", "TokenIdHash");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.ToTable("AssertionReplay");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.ExternalOrderDeduction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ExternalOrderId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompletedAt");
+
+                    b.HasIndex("ClientId", "EventId")
+                        .IsUnique();
+
+                    b.HasIndex("ClientId", "ExternalOrderId")
+                        .IsUnique();
+
+                    b.ToTable("ExternalOrderDeduction");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.ExternalOrderDeductionLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BalanceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExternalLineId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("ExternalOrderDeductionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExternalProductId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BalanceId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ExternalOrderDeductionId", "ExternalLineId");
+
+                    b.ToTable("ExternalOrderDeductionLine", t =>
+                        {
+                            t.HasCheckConstraint("CK_ExternalDeductionLine_Positive", "[Quantity]>0");
+                        });
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.IntegrationClient", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("IntegrationClient");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.InventorySyncSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("ContentHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("TotalRows")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Version")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Version"));
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("Version")
+                        .IsUnique();
+
+                    b.HasIndex("ClientId", "CreatedAt");
+
+                    b.ToTable("InventorySyncSnapshot");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.InventorySyncSnapshotLine", b =>
+                {
+                    b.Property<Guid>("SnapshotId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SnapshotId", "Ordinal");
+
+                    b.ToTable("InventorySyncSnapshotLine");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.ProductMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("ExternalProductId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId", "ExternalProductId")
+                        .IsUnique();
+
+                    b.HasIndex("ProductId", "ClientId");
+
+                    b.ToTable("ProductMapping");
+                });
+
             modelBuilder.Entity("Wros.Api.Modules.Inventory.InventoryBalance", b =>
                 {
                     b.Property<Guid>("Id")
@@ -465,6 +704,10 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.Property<Guid>("DeliveryNoteId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("IntegrationClientId")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
                     b.Property<Guid?>("LocationId")
                         .HasColumnType("uniqueidentifier");
 
@@ -474,6 +717,17 @@ namespace Wros.Api.Shared.Persistence.Migrations
 
                     b.Property<Guid>("RackId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ReferenceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("ReferenceType")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.Property<Guid>("StockLotId")
                         .HasColumnType("uniqueidentifier");
@@ -500,13 +754,125 @@ namespace Wros.Api.Shared.Persistence.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("ReferenceType", "ReferenceId");
+
+                    b.HasIndex("Timestamp", "Id");
+
                     b.HasIndex("DeliveryNoteId", "Timestamp", "Id");
 
                     b.HasIndex("StockLotId", "Timestamp", "Id");
 
                     b.ToTable("StockMovements", t =>
                         {
-                            t.HasCheckConstraint("CK_StockMovement_Sign", "([Type] IN ('Receipt','RelocationIn') AND [Quantity]>0) OR ([Type]='RelocationOut' AND [Quantity]<0)");
+                            t.HasCheckConstraint("CK_StockMovement_Sign", "([Type] IN ('Receipt','RelocationIn','TransferIn') AND [Quantity]>0) OR ([Type] IN ('RelocationOut','SupplierReturn','Disposal','TransferOut','ExternalOrder') AND [Quantity]<0)");
+                        });
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Outbound.StockTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid?>("DeliveryNoteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IdempotencyKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<Guid?>("PurchaseOrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryNoteId");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("Kind", "CompletedAt", "Id");
+
+                    b.ToTable("StockTransaction", t =>
+                        {
+                            t.HasCheckConstraint("CK_StockTransaction_Kind", "[Kind] IN ('SupplierReturn','Disposal','Transfer')");
+                        });
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Outbound.StockTransactionLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DestinationLocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DestinationRackId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<Guid>("SourceBalanceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StockTransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationLocationId");
+
+                    b.HasIndex("DestinationRackId");
+
+                    b.HasIndex("SourceBalanceId");
+
+                    b.HasIndex("StockTransactionId");
+
+                    b.ToTable("StockTransactionLine", t =>
+                        {
+                            t.HasCheckConstraint("CK_StockTransactionLine_Positive", "[Quantity]>0");
                         });
                 });
 
@@ -1230,6 +1596,80 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("Wros.Api.Modules.Integration.AssertionReplay", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Integration.IntegrationClient", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.ExternalOrderDeduction", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Integration.IntegrationClient", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.ExternalOrderDeductionLine", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Inventory.InventoryBalance", null)
+                        .WithMany()
+                        .HasForeignKey("BalanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wros.Api.Modules.Integration.ExternalOrderDeduction", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("ExternalOrderDeductionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wros.Api.Modules.Catalog.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.InventorySyncSnapshot", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Integration.IntegrationClient", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.InventorySyncSnapshotLine", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Integration.InventorySyncSnapshot", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("SnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.ProductMapping", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Integration.IntegrationClient", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wros.Api.Modules.Catalog.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("Wros.Api.Modules.Inventory.InventoryBalance", b =>
                 {
                     b.HasOne("Wros.Api.Modules.Warehouses.StorageLocation", "Location")
@@ -1298,6 +1738,57 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.Navigation("DeliveryNote");
 
                     b.Navigation("StockLot");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Outbound.StockTransaction", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Receiving.DeliveryNote", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryNoteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wros.Api.Modules.Purchasing.PurchaseOrder", null)
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wros.Api.Modules.Suppliers.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Outbound.StockTransactionLine", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Warehouses.StorageLocation", "DestinationLocation")
+                        .WithMany()
+                        .HasForeignKey("DestinationLocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wros.Api.Modules.Warehouses.StorageRack", "DestinationRack")
+                        .WithMany()
+                        .HasForeignKey("DestinationRackId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wros.Api.Modules.Inventory.InventoryBalance", "SourceBalance")
+                        .WithMany()
+                        .HasForeignKey("SourceBalanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wros.Api.Modules.Outbound.StockTransaction", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("StockTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DestinationLocation");
+
+                    b.Navigation("DestinationRack");
+
+                    b.Navigation("SourceBalance");
                 });
 
             modelBuilder.Entity("Wros.Api.Modules.Purchasing.PurchaseOrder", b =>
@@ -1470,6 +1961,21 @@ namespace Wros.Api.Shared.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.ExternalOrderDeduction", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Integration.InventorySyncSnapshot", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Outbound.StockTransaction", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("Wros.Api.Modules.Purchasing.PurchaseOrder", b =>

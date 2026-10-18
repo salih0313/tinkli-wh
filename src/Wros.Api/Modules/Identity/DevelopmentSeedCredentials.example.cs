@@ -4,6 +4,6 @@ namespace Wros.Api.Modules.Identity;
 // The local copy is ignored by Git and used automatically when present.
 internal static class DevelopmentSeedCredentials
 {
-    public const string SuperAdminPassword = "admin123!";
-    public const string WarehouseStaffPassword = "staff123!";
+    public const string SuperAdminPassword = "";
+    public const string WarehouseStaffPassword = "";
 }

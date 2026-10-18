@@ -13,7 +13,7 @@ export default function Home() {
   const shortcuts: { to: string; title: string; detail: string; icon: IconName }[] = [
     ...(user?.permissions.includes('receiving.manage') ? [{ to: '/delivery-notes', title: 'Receive a delivery', detail: 'Draft receipts, split lot allocations and post stock', icon: 'warehouse' as const }] : []),
     ...(user?.permissions.includes('purchaseorders.manage') ? [{ to: '/purchase-orders', title: 'Purchase orders', detail: 'Supplier requests, revisions and printable documents', icon: 'audit' as const }] : []),
-    ...(user?.permissions.includes('inventory.view') ? [{ to: '/receipt-stock', title: 'Receipt stock', detail: 'Read-only on-hand balances by receipt lot and location', icon: 'overview' as const }] : []),
+    ...(user?.permissions.includes('inventory.view') ? [{ to: '/inventory-overview', title: 'Inventory overview', detail: 'Physical and sellable units, expiry and movement summaries', icon: 'overview' as const }] : []),
     ...(admin ? [{ to: '/users', title: 'Manage your team', detail: 'Staff accounts, roles and account access', icon: 'users' as const }, { to: '/roles', title: 'Review permissions', detail: 'Control what each role can do', icon: 'shield' as const }] : []),
     ...(user?.permissions.includes('audit.view') ? [{ to: '/audit', title: 'View security activity', detail: 'Account events and permission changes', icon: 'audit' as const }] : []),
     { to: '/password', title: 'Account & password', detail: 'Review your account and update your password', icon: 'key' },

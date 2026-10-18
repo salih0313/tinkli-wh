@@ -49,7 +49,7 @@ public static class ReceivingConfiguration
         movement.HasOne<StorageRack>().WithMany().HasForeignKey(x => x.RackId).OnDelete(DeleteBehavior.Restrict);
         movement.HasOne<StorageLocation>().WithMany().HasForeignKey(x => x.LocationId).OnDelete(DeleteBehavior.Restrict);
         movement.HasIndex(x => new { x.StockLotId, x.Timestamp, x.Id }); movement.HasIndex(x => new { x.DeliveryNoteId, x.Timestamp, x.Id });
-        movement.HasIndex(x => x.CorrectionId);
-        movement.ToTable(t => t.HasCheckConstraint("CK_StockMovement_Sign", "([Type] IN ('Receipt','RelocationIn') AND [Quantity]>0) OR ([Type]='RelocationOut' AND [Quantity]<0)"));
+        movement.HasIndex(x => x.CorrectionId); movement.HasIndex(x => new { x.Timestamp, x.Id }); movement.HasIndex(x => new { x.ReferenceType, x.ReferenceId });
+        movement.ToTable(t => t.HasCheckConstraint("CK_StockMovement_Sign", "([Type] IN ('Receipt','RelocationIn','TransferIn') AND [Quantity]>0) OR ([Type] IN ('RelocationOut','SupplierReturn','Disposal','TransferOut','ExternalOrder') AND [Quantity]<0)"));
     }
 }

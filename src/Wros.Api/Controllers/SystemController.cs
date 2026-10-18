@@ -8,7 +8,7 @@ namespace Wros.Api.Controllers;
 public sealed class SystemController : ControllerBase
 {
     [HttpGet]
-    public ActionResult<SystemInfo> Get() => new SystemInfo("WROS", "v1", "Phase 1 — Identity");
+    public ActionResult<SystemInfo> Get() => new SystemInfo("WROS", "v1", "Phase 8 — Handover");
 }
 
 public sealed record SystemInfo(string Application, string ApiVersion, string Phase);

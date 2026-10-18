@@ -31,4 +31,8 @@ public sealed class StockMovement
     public Guid? ActorId { get; set; }
     [MaxLength(80)] public string CorrelationId { get; set; } = "";
     public Guid? CorrectionId { get; set; }
+    [MaxLength(80)] public string? IntegrationClientId { get; set; }
+    public Guid? ReferenceId { get; set; }
+    [MaxLength(32)] public string? ReferenceType { get; set; }
+    [MaxLength(64)] public string? ReferenceNumber { get; set; }
 }

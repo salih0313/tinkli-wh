@@ -15,6 +15,7 @@ public static class PermissionCatalog
     public const string PurchasingReadPolicy = "PurchasingRead";
     public const string MasterReadPolicy = "MasterDataRead";
     public static readonly string[] MasterReaders = [SuppliersPolicy, ProductsPolicy, WarehousesPolicy, PurchasingPolicy, ReceivingPolicy, InventoryPolicy];
+    public static readonly IReadOnlyDictionary<string,string> StockOperations = new Dictionary<string,string> { ["SupplierReturn"]="outbound.manage", ["Disposal"]="inventory.adjust", ["Transfer"]="inventory.transfer" };
     public static readonly string[] All = ["users.manage", "roles.manage", "suppliers.manage", "products.manage",
         "warehouses.manage", "purchaseorders.manage", "receiving.manage", "inventory.view", "inventory.adjust", "inventory.transfer",
         "outbound.manage", "integration.manage", "audit.view"];

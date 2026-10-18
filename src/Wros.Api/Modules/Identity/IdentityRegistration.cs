@@ -18,7 +18,7 @@ public static class IdentityRegistration
         services.AddOptions<WrosSessionOptions>().BindConfiguration("Authentication").ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<SeedOptions>().BindConfiguration("Seed")
             .Validate(options => !options.Enabled, "Development users are seeded by database update from DevelopmentSeedCredentials.local.cs. Keep the legacy Seed:Enabled flag false.")
-            .Validate(options => !options.SampleDataEnabled, "Sample business data is not implemented in Phase 1.")
+            .Validate(options => !options.SampleDataEnabled, "Sample business data seeding is not implemented. Keep Seed:SampleDataEnabled false.")
             .ValidateOnStart();
         services.AddDataProtection().SetApplicationName("Wros");
         services.AddHttpContextAccessor();
@@ -70,6 +70,7 @@ public static class IdentityRegistration
                 .AddRequirements(new PermissionRequirement(PermissionCatalog.PurchasingPolicy, PermissionCatalog.ReceivingPolicy)));
             options.AddPolicy(PermissionCatalog.MasterReadPolicy, policy => policy.RequireAuthenticatedUser()
                 .AddRequirements(new PermissionRequirement(PermissionCatalog.MasterReaders[0], PermissionCatalog.MasterReaders.Skip(1).ToArray())));
+            options.AddPolicy("StockOperations", policy => policy.RequireAuthenticatedUser().AddRequirements(new PermissionRequirement(PermissionCatalog.StockOperations.Values.First(), PermissionCatalog.StockOperations.Values.Skip(1).ToArray())));
             options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
             options.AddPolicy(PermissionCatalog.ManageUsersPolicy, policy => policy.RequireAuthenticatedUser()
                 .RequireRole(PermissionCatalog.SuperAdmin).AddRequirements(new PermissionRequirement("users.manage")));
@@ -100,7 +101,10 @@ public static class IdentityRegistration
             await Results.Problem(statusCode: 403, title: "Change your temporary password before continuing.").ExecuteAsync(context);
             return;
         }
-        // All state changes, including login/logout, require an antiforgery token.
+        // A machine endpoint bypasses cookie CSRF only after its explicit scheme and scope succeeded.
+        if (context.Items["ValidatedIntegrationClient"] is string && context.User.Identity?.AuthenticationType == Wros.Api.Modules.Integration.IntegrationAuthentication.SchemeName)
+        { await next(context); return; }
+        // All staff state changes, including login/logout, require an antiforgery token.
         if (HttpMethods.IsPost(context.Request.Method) || HttpMethods.IsPut(context.Request.Method)
             || HttpMethods.IsPatch(context.Request.Method) || HttpMethods.IsDelete(context.Request.Method))
         {

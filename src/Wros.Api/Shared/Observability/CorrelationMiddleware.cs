@@ -17,6 +17,8 @@ public sealed class CorrelationMiddleware(RequestDelegate next)
         {
             context.Response.Headers[HeaderName] = correlationId;
             context.Response.Headers.XContentTypeOptions = "nosniff";
+            context.Response.Headers.XFrameOptions = "DENY";
+            context.Response.Headers.ContentSecurityPolicy = "frame-ancestors 'none'";
             context.Response.Headers["Referrer-Policy"] = "no-referrer";
             context.Response.Headers.CacheControl = "no-store";
             return Task.CompletedTask;

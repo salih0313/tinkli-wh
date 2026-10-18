@@ -48,8 +48,8 @@ public sealed class WrosDbContext(DbContextOptions<WrosDbContext> options) : Ide
     private void GuardImmutableHistory()
     {
         ChangeTracker.DetectChanges();
-        if (ChangeTracker.Entries().Any(x => (x.Entity is StockMovement or PurchaseOrderRevision) && x.State is EntityState.Modified or EntityState.Deleted))
-            throw new InvalidOperationException("Stock movements and PO revision snapshots are append-only.");
+        if (ChangeTracker.Entries().Any(x => (x.Entity is AuditLog or StockMovement or PurchaseOrderRevision or Wros.Api.Modules.Outbound.StockTransaction or Wros.Api.Modules.Outbound.StockTransactionLine or Wros.Api.Modules.Integration.InventorySyncSnapshot or Wros.Api.Modules.Integration.InventorySyncSnapshotLine or Wros.Api.Modules.Integration.ExternalOrderDeduction or Wros.Api.Modules.Integration.ExternalOrderDeductionLine) && x.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Audit and operational history, including inventory snapshots, are append-only.");
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -57,6 +57,8 @@ public sealed class WrosDbContext(DbContextOptions<WrosDbContext> options) : Ide
         MasterDataConfiguration.Apply(modelBuilder);
         PurchasingConfiguration.Apply(modelBuilder);
         ReceivingConfiguration.Apply(modelBuilder);
+        Wros.Api.Modules.Outbound.OutboundConfiguration.Apply(modelBuilder);
+        Wros.Api.Modules.Integration.IntegrationConfiguration.Apply(modelBuilder);
         modelBuilder.Entity<Permission>(entity => { entity.HasKey(x => x.Id); entity.Property(x => x.Id).HasMaxLength(80); });
         modelBuilder.Entity<RolePermission>(entity =>
         {

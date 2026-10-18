@@ -35,8 +35,8 @@ builder.Services.AddOptions<CorsOptions>().BindConfiguration("Cors")
         "Outside Development, CORS origins must use HTTPS.").ValidateOnStart();
 builder.Services.AddOptions<InventoryOptions>().BindConfiguration("Inventory").ValidateDataAnnotations().ValidateOnStart();
 builder.Services.AddOptions<IntegrationOptions>().BindConfiguration("Integration")
-    .Validate(options => options.AllowedClients.Length == 0,
-        "Integration clients are not supported until Phase 7. Keep Integration:AllowedClients empty.").ValidateOnStart();
+    .Validate(IntegrationOptions.IsValid,
+        "Integration configuration requires an HTTPS audience, valid limits, explicit allowed clients, minimal scopes and RSA public keys (2048+ bits).").ValidateOnStart();
 
 builder.Services.AddDbContext<WrosDbContext>((services, options) =>
 {
@@ -55,11 +55,19 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .WithMethods("GET").WithHeaders("Content-Type", CorrelationMiddleware.HeaderName)
     .WithExposedHeaders(CorrelationMiddleware.HeaderName)));
 builder.Services.AddWrosIdentity();
+builder.Services.AddAuthentication().AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, Wros.Api.Modules.Integration.IntegrationAuthentication>(Wros.Api.Modules.Integration.IntegrationAuthentication.SchemeName,_=>{});
+builder.Services.AddAuthorization(options => {
+    foreach(var scope in new[]{"inventory.snapshot","orders.deduct"}) options.AddPolicy("Machine:"+scope,p=>p.AddAuthenticationSchemes(Wros.Api.Modules.Integration.IntegrationAuthentication.SchemeName).RequireAuthenticatedUser().RequireClaim("integration_client").RequireClaim("scope",scope));
+});
+builder.Services.AddRateLimiter(options=>options.AddPolicy("integration",context=>System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString()??"unknown",_=>new System.Threading.RateLimiting.FixedWindowRateLimiterOptions{PermitLimit=120,Window=TimeSpan.FromMinutes(1),QueueLimit=0})));
+builder.Services.AddScoped<Wros.Api.Modules.Integration.IntegrationService>();
 builder.Services.AddScoped<Wros.Api.Shared.Operations.MasterDataService>();
 builder.Services.AddScoped<Wros.Api.Shared.Operations.DocumentNumbers>();
 builder.Services.AddScoped<Wros.Api.Modules.Purchasing.PurchaseOrderService>();
 builder.Services.AddScoped<Wros.Api.Modules.Receiving.ReceivingService>();
 builder.Services.AddScoped<Wros.Api.Modules.Receiving.ReceiptQueries>();
+builder.Services.AddScoped<Wros.Api.Modules.Inventory.InventoryQueries>();
+builder.Services.AddScoped<Wros.Api.Modules.Outbound.StockTransactionService>();
 builder.Services.AddControllers(options => options.Conventions.Add(
     new DevelopmentOnlyConvention(builder.Environment.IsDevelopment())));
 builder.Services.AddOpenApi();
