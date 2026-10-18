@@ -64,6 +64,12 @@ public static class IdentityRegistration
         });
         services.AddAuthorization(options =>
         {
+            foreach (var permission in PermissionCatalog.All)
+                options.AddPolicy(permission, policy => policy.RequireAuthenticatedUser().AddRequirements(new PermissionRequirement(permission)));
+            options.AddPolicy(PermissionCatalog.PurchasingReadPolicy, policy => policy.RequireAuthenticatedUser()
+                .AddRequirements(new PermissionRequirement(PermissionCatalog.PurchasingPolicy, PermissionCatalog.ReceivingPolicy)));
+            options.AddPolicy(PermissionCatalog.MasterReadPolicy, policy => policy.RequireAuthenticatedUser()
+                .AddRequirements(new PermissionRequirement(PermissionCatalog.MasterReaders[0], PermissionCatalog.MasterReaders.Skip(1).ToArray())));
             options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
             options.AddPolicy(PermissionCatalog.ManageUsersPolicy, policy => policy.RequireAuthenticatedUser()
                 .RequireRole(PermissionCatalog.SuperAdmin).AddRequirements(new PermissionRequirement("users.manage")));

@@ -7,12 +7,13 @@ import { Button, IconButton } from '../ui/Controls'
 import { Icon } from '../ui/Icon'
 import type { IconName } from '../ui/Icon'
 import { humanize } from '../../lib/presentation'
+import { masterReaders } from '../../features/master-data/types'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return <span className="brand"><span className="brand-mark"><Icon name="warehouse" width="23" height="23" /></span>{!compact && <span><strong>WROS<span className="brand-dot">.</span></strong><small>Warehouse operations</small></span>}</span>
 }
-const pageNames: Record<string, string> = { '/': 'Overview', '/users': 'Users', '/roles': 'Roles & permissions', '/audit': 'Security audit', '/password': 'Account & password', '/system': 'System status' }
+const pageNames: Record<string, string> = { '/delivery-notes': 'Delivery notes', '/receipt-stock': 'Receipt stock', '/purchase-orders': 'Purchase orders', '/suppliers': 'Suppliers', '/products': 'Products', '/warehouses': 'Warehouses', '/areas': 'Warehouse areas', '/racks': 'Storage racks', '/locations': 'Locations', '/': 'Overview', '/users': 'Users', '/roles': 'Roles & permissions', '/audit': 'Security audit', '/password': 'Account & password', '/system': 'System status' }
 export default function AppShell() {
   const { user, clear } = useSession()
   const location = useLocation()
@@ -24,7 +25,7 @@ export default function AppShell() {
   const menuButton = useRef<HTMLButtonElement>(null)
   const userMenu = useRef<HTMLDetailsElement>(null)
   const admin = user?.roles.includes('SuperAdmin')
-  const title = pageNames[location.pathname] ?? 'Workspace'
+  const title = pageNames[location.pathname] ?? (location.pathname.startsWith('/purchase-orders/') ? 'Purchase orders' : location.pathname.startsWith('/delivery-notes/') ? 'Delivery notes' : pageNames['/' + location.pathname.split('/').at(-1)]) ?? 'Workspace'
   useBodyScrollLock(mobileOpen)
   useEffect(() => {
     setMobileOpen(false)
@@ -58,6 +59,14 @@ export default function AppShell() {
   const links: { to: string; label: string; icon: IconName; group: string }[] = [
     ...(!user?.mustChangePassword ? [
       { to: '/', label: 'Overview', icon: 'overview' as const, group: 'Workspace' },
+      ...(user?.permissions.includes('purchaseorders.manage') ? [{ to: '/purchase-orders', label: 'Purchase orders', icon: 'audit' as const, group: 'Operations' }] : []),
+      ...(user?.permissions.includes('receiving.manage') ? [{ to: '/delivery-notes', label: 'Delivery notes', icon: 'warehouse' as const, group: 'Operations' }] : []),
+      ...(user?.permissions.includes('inventory.view') ? [{ to: '/receipt-stock', label: 'Receipt stock', icon: 'overview' as const, group: 'Operations' }] : []),
+      ...(masterReaders.some(permission => user?.permissions.includes(permission)) ? [
+        { to: '/suppliers', label: 'Suppliers', icon: 'users' as const, group: 'Master data' },
+        { to: '/products', label: 'Products', icon: 'overview' as const, group: 'Master data' },
+        { to: '/warehouses', label: 'Warehouses', icon: 'warehouse' as const, group: 'Master data' },
+      ] : []),
       ...(admin ? [{ to: '/users', label: 'Users', icon: 'users' as const, group: 'Administration' }, { to: '/roles', label: 'Roles & permissions', icon: 'shield' as const, group: 'Administration' }] : []),
       ...(user?.permissions.includes('audit.view') ? [{ to: '/audit', label: 'Security audit', icon: 'audit' as const, group: 'Administration' }] : []),
       { to: '/system', label: 'System status', icon: 'activity' as const, group: 'Settings' },
@@ -80,6 +89,6 @@ export default function AppShell() {
     </dialog>
     <div className="app-workspace"><header className="topbar"><div className="topbar-title"><button ref={menuButton} className="button ghost icon-button mobile-menu-button" aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><Icon name="menu" /></button><span className="breadcrumb-root">Workspace<Icon name="chevron" width="14" height="14" /></span><span>{title}</span></div>
       <details ref={userMenu} className="user-menu"><summary aria-label={`Account menu for ${user?.userName}`}><span className="avatar">{user?.userName.slice(0, 2).toUpperCase()}</span><span className="user-menu-name"><strong>{user?.userName}</strong><small>{humanize(user?.roles[0] ?? 'Staff')}</small></span><Icon name="down" width="16" height="16" /></summary><div className="user-menu-panel"><p>Signed in as<strong>{user?.userName}</strong></p><NavLink to="/password"><Icon name="key" />Account & password</NavLink><Button variant="ghost" icon="logout" loading={busy} onClick={() => void logout()}>Sign out</Button></div></details>
-    </header><main id="main" className="page-content" tabIndex={-1}><ErrorMessage error={error} /><Outlet /></main><footer className="workspace-footer"><span>WROS · Warehouse Receiving & Operations</span><span>Identity & access workspace</span></footer></div>
+    </header><main id="main" className="page-content" tabIndex={-1}><ErrorMessage error={error} /><Outlet /></main><footer className="workspace-footer"><span>WROS · Warehouse Receiving & Operations</span><span>Warehouse operations workspace</span></footer></div>
   </div>
 }

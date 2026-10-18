@@ -55,6 +55,11 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .WithMethods("GET").WithHeaders("Content-Type", CorrelationMiddleware.HeaderName)
     .WithExposedHeaders(CorrelationMiddleware.HeaderName)));
 builder.Services.AddWrosIdentity();
+builder.Services.AddScoped<Wros.Api.Shared.Operations.MasterDataService>();
+builder.Services.AddScoped<Wros.Api.Shared.Operations.DocumentNumbers>();
+builder.Services.AddScoped<Wros.Api.Modules.Purchasing.PurchaseOrderService>();
+builder.Services.AddScoped<Wros.Api.Modules.Receiving.ReceivingService>();
+builder.Services.AddScoped<Wros.Api.Modules.Receiving.ReceiptQueries>();
 builder.Services.AddControllers(options => options.Conventions.Add(
     new DevelopmentOnlyConvention(builder.Environment.IsDevelopment())));
 builder.Services.AddOpenApi();

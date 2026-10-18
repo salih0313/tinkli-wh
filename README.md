@@ -256,3 +256,14 @@ Complete [docs/phase-1-manual-checks.md](docs/phase-1-manual-checks.md), includi
 References: [ASP.NET antiforgery](https://learn.microsoft.com/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0), [ASP.NET rate limiting](https://learn.microsoft.com/aspnet/core/performance/rate-limit?view=aspnetcore-10.0), [Identity security-stamp validation](https://source.dot.net/Microsoft.AspNetCore.Identity/SecurityStampValidator.cs.html).
 
 Seeding reference: [EF Core UseSeeding and UseAsyncSeeding](https://learn.microsoft.com/en-us/ef/core/modeling/data-seeding).
+
+
+## Phases 2–4: operational modules
+
+Master data, purchase orders and delivery-note receiving are implemented on the existing Identity and UI foundation. See the [delivery guide](docs/phases-2-4-delivery.md) for APIs, migrations, decisions and changed files. Owner manual verification remains required:
+
+- [Phase 2 — master data](docs/phase-2-manual-checks.md)
+- [Phase 3 — purchasing](docs/phase-3-manual-checks.md)
+- [Phase 4 — receiving and stock-in](docs/phase-4-manual-checks.md)
+
+Run the existing database update command to apply the three additive migrations. No database reset, extra secrets or sample transaction seed is required. Phase 5 has not been started.

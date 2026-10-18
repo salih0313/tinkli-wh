@@ -269,3 +269,48 @@ fieldset:disabled .check-label { cursor: default; opacity: .7; }
 
 .field-error { color: #a12939; font-size: 12px; font-weight: 400; }
 input[aria-invalid='true'], select[aria-invalid='true'] { border-color: #d65870; background: #fffafb; }
+.status-filter { max-width: 170px; }
+textarea { width: 100%; min-height: 90px; border: 1px solid #d6deea; border-radius: 9px; background: white; padding: 11px 13px; font-size: 16px; font-weight: 400; }
+.line-editor { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: 14px; border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-width: 0; }
+.line-number { color: var(--muted); font-size: 12px; }
+.editor-actions { display: flex; justify-content: flex-end; gap: 12px; position: sticky; bottom: 12px; z-index: 10; padding: 14px; background: #ffffffed; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 30px #16284812; }
+.document-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+.document-sheet { overflow: hidden; }
+.document-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; padding: 24px; border-bottom: 1px solid var(--border); }
+.document-head h2 { font-size: 24px; font-weight: 650; letter-spacing: -.5px; }
+.document-head p:last-child { color: var(--muted); font-size: 12px; margin-top: 8px; }
+.document-facts { display: grid; gap: 20px; padding: 24px; }
+.document-facts dt { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
+.document-facts dd { font-size: 13px; overflow-wrap: anywhere; }
+.document-remarks { padding: 24px; white-space: pre-wrap; font-size: 13px; line-height: 1.8; }
+.document-remarks h3 { font-weight: 600; margin-bottom: 6px; }
+.revision-entry { border: 1px solid var(--border); border-radius: 9px; padding: 12px; }
+.revision-entry summary { min-height: 44px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.revision-entry summary span { color: var(--muted); font-size: 10px; font-weight: 400; }
+.safe-json { margin-top: 14px; padding: 14px; border-radius: 9px; background: #f6f8fc; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (min-width: 768px) { .line-editor { grid-template-columns: 20px minmax(0, 1fr) 140px auto; } .document-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media print {
+  @page { margin: 14mm; }
+  body { background: white; color: #111; }
+  .no-print, .desktop-sidebar, .topbar, .workspace-footer, .skip-link, .nav-drawer, dialog { display: none !important; }
+  .app-shell { padding: 0; } .app-workspace { min-height: 0; } .page-content { padding: 0; max-width: none; }
+  .document-sheet { border: 0; box-shadow: none; overflow: visible; }
+  .document-sheet .desktop-table { display: block; overflow: visible; } .document-sheet .mobile-records { display: none; }
+  .document-sheet table { width: 100%; table-layout: auto; border-collapse: collapse; }
+  .document-sheet th, .document-sheet td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; font-size: 11px; }
+  tr { break-inside: avoid; } thead { display: table-header-group; }
+  .context-note { background: white; }
+}
+.receipt-line { overflow: hidden; }
+.lot-editor, .lot-summary { border: 1px solid var(--border); border-radius: 10px; min-width: 0; }
+.lot-editor > summary { min-height: 48px; padding: 14px 16px; cursor: pointer; font-size: 13px; font-weight: 600; background: #f8faff; border-radius: 10px; }
+.lot-summary { padding: 16px; }
+.allocation-editor { padding: 16px; border: 1px solid #dce7ff; border-radius: 10px; background: #fcfdff; }
+.allocation-total { font-size: 12px; color: #9a6521; line-height: 1.8; }
+.allocation-total.complete { color: #197052; }
+.allocation-row { display: grid; gap: 12px; min-width: 0; align-items: end; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.movement-entry { border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.movement-facts { display: grid; gap: 14px; margin-top: 18px; }
+.movement-facts dt { color: var(--muted); font-size: 10px; margin-bottom: 5px; }
+.movement-facts dd { font-size: 11px; overflow-wrap: anywhere; }
+@media (min-width: 768px) { .allocation-row { grid-template-columns: minmax(0, 1fr) 120px auto; } .movement-facts { grid-template-columns: repeat(2,minmax(0,1fr)); } }

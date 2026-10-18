@@ -8,6 +8,8 @@ public sealed class AuditService(WrosDbContext db, IHttpContextAccessor accessor
 {
     public Guid? ActorId => Guid.TryParse(accessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
 
+    public string CorrelationId => accessor.HttpContext?.TraceIdentifier ?? "system-seed";
+
     // Callers provide explicit safe projections, never request bodies or Identity entities.
     public void Record(string action, string entity, string? entityId = null,
         object? oldValues = null, object? newValues = null, Guid? validatedActor = null)
@@ -18,7 +20,7 @@ public sealed class AuditService(WrosDbContext db, IHttpContextAccessor accessor
             Action = action, Entity = entity, EntityId = entityId,
             OldValues = oldValues is null ? null : JsonSerializer.Serialize(oldValues),
             NewValues = newValues is null ? null : JsonSerializer.Serialize(newValues),
-            CorrelationId = accessor.HttpContext?.TraceIdentifier ?? "system-seed"
+            CorrelationId = CorrelationId
         });
     }
 }

@@ -1,4 +1,5 @@
 const permissionLabels: Record<string, string> = {
+  'warehouses.manage': 'Manage warehouses & locations',
   'users.manage': 'Manage users',
   'roles.manage': 'Manage roles',
   'suppliers.manage': 'Manage suppliers',
