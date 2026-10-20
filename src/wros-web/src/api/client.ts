@@ -49,3 +49,9 @@ export async function getHealth(kind: 'live' | 'ready', signal: AbortSignal): Pr
   if (!response.ok && response.status !== 503) throw new ApiError(response.status, 'Health check failed.')
   return response.json() as Promise<HealthReport>
 }
+
+export async function upload<T>(path: string, file: File): Promise<T> {
+  const csrf = await get<{ token: string }>('/api/v1/auth/csrf')
+  const body = new FormData(); body.append('file', file)
+  return send<T>(path, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf.token }, body })
+}

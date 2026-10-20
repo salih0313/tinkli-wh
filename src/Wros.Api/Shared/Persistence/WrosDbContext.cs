@@ -14,6 +14,9 @@ namespace Wros.Api.Shared.Persistence;
 
 public sealed class WrosDbContext(DbContextOptions<WrosDbContext> options) : IdentityDbContext<AppUser, AppRole, Guid>(options)
 {
+    public DbSet<Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierProduct> SupplierProducts => Set<Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierProduct>();
+    public DbSet<Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImport> SupplierStockImports => Set<Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImport>();
+    public DbSet<Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImportRow> SupplierStockImportRows => Set<Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImportRow>();
     public DbSet<DeliveryNote> DeliveryNotes => Set<DeliveryNote>();
     public DbSet<DeliveryNoteLine> DeliveryNoteLines => Set<DeliveryNoteLine>();
     public DbSet<StockLot> StockLots => Set<StockLot>();
@@ -56,6 +59,7 @@ public sealed class WrosDbContext(DbContextOptions<WrosDbContext> options) : Ide
         base.OnModelCreating(modelBuilder);
         MasterDataConfiguration.Apply(modelBuilder);
         PurchasingConfiguration.Apply(modelBuilder);
+        Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierCatalogConfiguration.Apply(modelBuilder);
         ReceivingConfiguration.Apply(modelBuilder);
         Wros.Api.Modules.Outbound.OutboundConfiguration.Apply(modelBuilder);
         Wros.Api.Modules.Integration.IntegrationConfiguration.Apply(modelBuilder);

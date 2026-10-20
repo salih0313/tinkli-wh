@@ -951,6 +951,9 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.Property<int>("Position")
                         .HasColumnType("int");
 
+                    b.Property<string>("PricingJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
@@ -961,9 +964,14 @@ namespace Wros.Api.Shared.Persistence.Migrations
                         .HasPrecision(18)
                         .HasColumnType("decimal(18,0)");
 
+                    b.Property<Guid?>("SupplierProductId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("SupplierProductId");
 
                     b.HasIndex("PurchaseOrderId", "Position")
                         .IsUnique();
@@ -1008,6 +1016,197 @@ namespace Wros.Api.Shared.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("PurchaseOrderRevisions");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierProduct", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("AvailableQuantity")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("Barcode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Brand")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetimeoffset(3)");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("LatestImportId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("NetUnitPrice")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<decimal?>("Rsp")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("SupplierPrice")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetimeoffset(3)");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LatestImportId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("SupplierId", "Code")
+                        .IsUnique();
+
+                    b.HasIndex("SupplierId", "LatestImportId");
+
+                    b.ToTable("SupplierProducts", t =>
+                        {
+                            t.HasCheckConstraint("CK_SupplierProduct_Price", "[SupplierPrice]>=0 AND [NetUnitPrice]>=0 AND ([Rsp] IS NULL OR [Rsp]>=0) AND [DiscountValue]>=0");
+                        });
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetimeoffset(3)");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FileHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("HeadersJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MappingJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetimeoffset(3)");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplierId", "CreatedAt");
+
+                    b.HasIndex("SupplierId", "FileHash")
+                        .IsUnique()
+                        .HasFilter("[ConfirmedAt] IS NOT NULL");
+
+                    b.ToTable("SupplierStockImports");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImportRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CellsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ImportId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResultJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RowNumber")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("SupplierProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplierProductId");
+
+                    b.HasIndex("ImportId", "RowNumber")
+                        .IsUnique();
+
+                    b.ToTable("SupplierStockImportRows");
                 });
 
             modelBuilder.Entity("Wros.Api.Modules.Receiving.DeliveryNote", b =>
@@ -1816,6 +2015,11 @@ namespace Wros.Api.Shared.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Product");
                 });
 
@@ -1826,6 +2030,48 @@ namespace Wros.Api.Shared.Persistence.Migrations
                         .HasForeignKey("PurchaseOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierProduct", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImport", null)
+                        .WithMany()
+                        .HasForeignKey("LatestImportId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wros.Api.Modules.Catalog.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wros.Api.Modules.Suppliers.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImport", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Suppliers.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImportRow", b =>
+                {
+                    b.HasOne("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImport", null)
+                        .WithMany("Rows")
+                        .HasForeignKey("ImportId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Wros.Api.Modules.Receiving.DeliveryNote", b =>
@@ -1983,6 +2229,11 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.Navigation("Lines");
 
                     b.Navigation("Revisions");
+                });
+
+            modelBuilder.Entity("Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierStockImport", b =>
+                {
+                    b.Navigation("Rows");
                 });
 
             modelBuilder.Entity("Wros.Api.Modules.Receiving.DeliveryNote", b =>

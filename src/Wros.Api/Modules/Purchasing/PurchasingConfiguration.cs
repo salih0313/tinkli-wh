@@ -13,6 +13,7 @@ public static class PurchasingConfiguration
         order.HasMany(x => x.Revisions).WithOne().HasForeignKey(x => x.PurchaseOrderId).OnDelete(DeleteBehavior.Restrict);
         var line = model.Entity<PurchaseOrderLine>(); line.HasKey(x => x.Id); line.Property(x => x.Quantity).HasPrecision(18, 0);
         line.HasIndex(x => new { x.PurchaseOrderId, x.Position }).IsUnique();
+        line.HasOne<SupplierCatalog.SupplierProduct>().WithMany().HasForeignKey(x => x.SupplierProductId).OnDelete(DeleteBehavior.Restrict);
         line.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
         line.ToTable(t => t.HasCheckConstraint("CK_PurchaseOrderLine_Quantity", "[Quantity]>0"));
         var revision = model.Entity<PurchaseOrderRevision>(); revision.HasKey(x => x.Id);

@@ -1,0 +1,32 @@
+import { useState } from 'react'
+import { get, mutate, upload } from '../../api/client'
+import { Dialog } from '../../components/ui/Dialog'
+import { Button, Select } from '../../components/ui/Controls'
+import { ErrorMessage, Field } from '../../components/Form'
+import type { CatalogProduct, ImportHistory, ImportPreview, Page } from './catalog'
+import { priceLabel, discountLabel } from './catalog'
+import { Pagination } from '../../components/data-display/Pagination'
+
+const fields = { Code: 'Supplier product code *', Name: 'Product name *', Brand: 'Brand', Barcode: 'Barcode', Rsp: 'RSP/MRP', SupplierPrice: 'Supplier purchase price *', DiscountType: 'Discount type', DiscountValue: 'Discount value', AvailableQuantity: 'Supplier available quantity', SupplierCode: 'Supplier code (validate)', SupplierName: 'Supplier name (validate)' }
+export function ExcelImportDialog({ supplierId, onClose, onImported }: { supplierId: string; onClose: () => void; onImported: (items: CatalogProduct[], importId: string) => void }) {
+  const base = `/api/v1/suppliers/${supplierId}/catalog`
+  const [preview, setPreview] = useState<ImportPreview | null>(null)
+  const [mapping, setMapping] = useState<Record<string, number>>({})
+  const [busy, setBusy] = useState(false); const [error, setError] = useState<unknown>(null); const [page, setPage] = useState(1)
+  const [history, setHistory] = useState<Page<ImportHistory> | null>(null); const [historyPage, setHistoryPage] = useState(1)
+  const mappingChanged = JSON.stringify(mapping) !== JSON.stringify(preview?.mapping ?? {})
+  async function run(action: () => Promise<void>) { setBusy(true); setError(null); try { await action() } catch (e) { setError(e) } finally { setBusy(false) } }
+  async function historyLoad(p: number) { await run(async () => { setHistory(await get<Page<ImportHistory>>(`${base}/imports?page=${p}`)); setHistoryPage(p) }) }
+  return <Dialog open onClose={onClose} title="Import supplier stock" description="Catalog information only. Warehouse stock is unchanged. First worksheet; header row first; values only." busy={busy} className="po-wide-dialog">
+    <ErrorMessage error={error} /><div className="po-toolbar"><a className="secondary" href={`${base}/template`} download>Download Excel template</a><Button variant="secondary" disabled={busy} onClick={() => void historyLoad(1)}>Import history</Button></div>
+    <Field label="Upload .xlsx (default limit 5 MB)"><input type="file" accept=".xlsx" disabled={busy} onChange={e => { const file = e.target.files?.[0]; if (file) void run(async () => { const value = await upload<ImportPreview>(`${base}/imports`, file); setPreview(value); setMapping(value.mapping); setPage(1); setHistory(null) }); e.target.value = '' }} /></Field>
+    {history && <section><h3>Import history · UTC</h3><div className="po-scroll"><table className="po-table"><thead><tr><th>File / user</th><th>Uploaded</th><th>Rows</th><th>Status</th></tr></thead><tbody>{history.items.map(h => <tr key={h.id}><td>{h.fileName}<small>{h.createdBy}</small></td><td>{new Date(h.createdAt).toISOString()}</td><td>{h.rowCount}</td><td>{h.confirmedAt ? 'Confirmed' : 'Preview only'}</td></tr>)}</tbody></table></div><Pagination page={historyPage} total={history.total} noun="imports" disabled={busy} onPage={p => void historyLoad(p)} /></section>}
+    {preview && <><h3 className="mt-4">{preview.fileName}</h3><div className="po-mapping">{Object.entries(fields).map(([key, label]) => <Field key={key} label={label}><Select disabled={busy || preview.confirmed} value={mapping[key] ?? ''} onChange={e => setMapping(current => { const next = { ...current }; if (e.target.value === '') delete next[key]; else next[key] = Number(e.target.value); return next })}><option value="">Not mapped</option>{preview.headers.map((h, i) => <option key={i} value={i}>{i + 1}. {h}</option>)}</Select></Field>)}</div>
+      <p className="field-hint">Map the price before discount. Ambiguous “Price” columns require your selection. Discounts: None, Percentage or Fixed. Use a decimal point; omit thousands separators. Keep codes and barcodes as text to preserve leading zeros.</p>
+      <Button variant="secondary" disabled={busy || preview.confirmed} onClick={() => void run(async () => { const value = await mutate<ImportPreview>('PUT', `${base}/imports/${preview.id}/mapping`, { mapping, rowVersion: preview.rowVersion }); setPreview(value); setMapping(value.mapping); setPage(1) })}>Validate mapping & preview</Button>
+      <p className="notice mt-4">{preview.totalRows} rows · {preview.validRows} valid · {preview.invalidRows} invalid · {preview.newProducts} new · {preview.existingProducts} updates{mappingChanged ? ' · Mapping changed: validate again.' : ''}</p>
+      <div className="po-scroll"><table className="po-table"><thead><tr><th>Row / Code</th><th>Product</th><th>Brand / Barcode</th><th>RSP</th><th>Supplier price</th><th>Discount</th><th>Net price</th><th>Supplier qty</th><th>Status</th></tr></thead><tbody>{preview.rows.slice((page - 1) * 20, page * 20).map(row => <tr key={row.rowNumber}><td>{row.rowNumber}<small>{row.product?.code}</small></td><td>{row.product?.name ?? 'Invalid row'}</td><td>{row.product?.brand}<small>{row.product?.barcode}</small></td><td>{priceLabel(row.product?.rsp)}</td><td>{priceLabel(row.product?.supplierPrice)}</td><td>{discountLabel(row.product?.discountType, row.product?.discountValue)}</td><td>{priceLabel(row.netUnitPrice)}</td><td>{row.product?.availableQuantity ?? '—'}</td><td>{row.errors.length ? <span className="text-red-700">{row.errors.join(' ')}</span> : row.existing ? 'Update' : 'New'}</td></tr>)}</tbody></table></div>
+      <Pagination page={page} total={preview.totalRows} noun="rows" onPage={setPage} />
+      <div className="dialog-actions"><Button variant="secondary" disabled={busy} onClick={onClose}>Cancel</Button><Button loading={busy} disabled={preview.invalidRows > 0 || mappingChanged || preview.confirmed} onClick={() => void run(async () => { const items = await mutate<CatalogProduct[]>('POST', `${base}/imports/${preview.id}/confirm`, { rowVersion: preview.rowVersion }); onImported(items, preview.id) })}>Confirm import</Button></div></>}
+  </Dialog>
+}

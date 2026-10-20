@@ -1,38 +1,81 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useBlocker, useNavigate, useParams } from 'react-router-dom'
 import { get, mutate } from '../api/client'
 import type { PurchaseOrder, OrderLine } from '../features/purchasing/types'
 import type { MasterRecord } from '../features/master-data/types'
-import { useLookup } from '../hooks/useLookup'
+import type { CatalogProduct } from '../features/purchasing/catalog'
+import { discountLabel, fils, formatFils, priceLabel, productSnapshot } from '../features/purchasing/catalog'
+import { ExcelImportDialog } from '../features/purchasing/ExcelImportDialog'
+import { CatalogPicker, SupplierProductDialog } from '../features/purchasing/CatalogDialogs'
+import { PricingSummary } from '../features/purchasing/PricingSummary'
+import { useLookup, allPages } from '../hooks/useLookup'
 import { ErrorMessage, Field, Heading } from '../components/Form'
 import { Button, Select } from '../components/ui/Controls'
+import { Dialog } from '../components/ui/Dialog'
 import { LoadingSkeleton } from '../components/feedback/States'
+import { useConfirm } from '../hooks/useConfirm'
+
 export default function PurchaseOrderEditor() {
-  const { id } = useParams(); const navigate = useNavigate()
+  const { id } = useParams(); const navigate = useNavigate(); const { confirm, confirmation } = useConfirm()
   const products = useLookup<MasterRecord>('/api/v1/products'); const suppliers = useLookup<MasterRecord>('/api/v1/suppliers')
-  const [order, setOrder] = useState<PurchaseOrder | null>(null); const [lines, setLines] = useState<OrderLine[]>([{ productId: '', quantity: 1 }])
+  const [order, setOrder] = useState<PurchaseOrder | null>(null); const [lines, setLines] = useState<OrderLine[]>([])
+  const [supplierId, setSupplierId] = useState(''); const [dirty, setDirty] = useState(false); const saved = useRef(false)
   const [loading, setLoading] = useState(!!id); const [busy, setBusy] = useState(false); const [error, setError] = useState<unknown>(null)
+  const [dialog, setDialog] = useState<'import' | 'catalog' | 'manual' | null>(null); const [editing, setEditing] = useState<CatalogProduct | null>(null)
+  const [catalog, setCatalog] = useState<Record<string, CatalogProduct>>({}); const [currentImport, setCurrentImport] = useState<string[]>([])
+  const [scope, setScope] = useState<'all' | 'current'>('all'); const [search, setSearch] = useState(''); const [common, setCommon] = useState(1)
+  const blocker = useBlocker(() => dirty && !saved.current)
+  useEffect(() => { const warn = (e: BeforeUnloadEvent) => { if (dirty && !saved.current) { e.preventDefault(); e.returnValue = '' } }; window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn) }, [dirty])
   useEffect(() => {
     if (!id) return
     const controller = new AbortController()
-    get<PurchaseOrder>(`/api/v1/purchase-orders/${id}`, controller.signal).then(value => { setOrder(value); setLines(value.lines) }).catch(failure => { if (!controller.signal.aborted) setError(failure) }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
+    get<PurchaseOrder>(`/api/v1/purchase-orders/${id}`, controller.signal).then(value => { setOrder(value); setSupplierId(value.supplierId); setLines(value.lines.map(l => ({ ...l, originalLineId: l.id }))) }).catch(failure => { if (!controller.signal.aborted) setError(failure) }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
   }, [id])
-  function change(index: number, update: Partial<OrderLine>) { setLines(current => current.map((line, position) => position === index ? { ...line, ...update } : line)) }
-  async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); const form = new FormData(event.currentTarget)
-    if (!lines.length || lines.some(line => !line.productId || !Number.isSafeInteger(line.quantity) || line.quantity < 1)) { setError('Choose products and positive whole-unit quantities.'); return }
+  function add(items: CatalogProduct[], fromImport = false) {
+    setCatalog(current => ({ ...current, ...Object.fromEntries(items.map(p => [p.id, p])) }))
+    setLines(current => [...current, ...items.filter(p => !current.some(l => l.supplierProductId === p.id)).map(p => ({ productId: p.productId ?? '', supplierProductId: p.id, quantity: 1, sku: p.code, name: p.name, pricing: productSnapshot(p, 1), catalogRowVersion: p.rowVersion }))])
+    if (fromImport) { setCurrentImport(items.map(p => p.id)); setScope('current') } else setScope('all')
+    setDirty(true); setDialog(null)
+  }
+  async function editProduct(line: OrderLine) {
+    if (!line.supplierProductId) return
+    setError(null)
+    try { const p = (await allPages<CatalogProduct>(`/api/v1/suppliers/${supplierId}/catalog?search=${encodeURIComponent(line.sku ?? '')}`)).find(p => p.id === line.supplierProductId); if (!p) throw new Error('Supplier catalog record not found.'); products.refresh(); setEditing(p); setDialog('manual') } catch (e) { setError(e) }
+  }
+  async function refreshPrices() {
+    if (!await confirm('Refresh all catalog prices from the latest supplier catalog? This replaces saved prices on this editable draft.')) return
     setBusy(true); setError(null)
     try {
-      const result = await mutate<PurchaseOrder>(id ? 'PUT' : 'POST', `/api/v1/purchase-orders${id ? `/${id}` : ''}`, { supplierId: form.get('supplierId'), orderDate: form.get('orderDate'), expectedDeliveryDate: form.get('expectedDeliveryDate') || null, remarks: form.get('remarks'), lines: lines.map(({ productId, quantity }) => ({ productId, quantity })), rowVersion: order?.rowVersion })
-      navigate(`/purchase-orders/${result.id}`, { replace: true })
+      const latest = await allPages<CatalogProduct>(`/api/v1/suppliers/${supplierId}/catalog`)
+      const byId = Object.fromEntries(latest.map(p => [p.id, p]));
+      if (lines.some(l => l.supplierProductId && (!byId[l.supplierProductId]?.isActive || byId[l.supplierProductId]?.productId !== l.productId))) throw new Error('A supplier product is inactive or its mapping changed. Review it before refreshing prices.')
+      setCatalog(byId); setLines(current => current.map(l => { const p = l.supplierProductId ? byId[l.supplierProductId] : null; return p ? { ...l, pricing: productSnapshot(p, l.quantity), refreshPrice: true, catalogRowVersion: p.rowVersion } : l })); setDirty(true)
+    } catch (e) { setError(e) } finally { setBusy(false) }
+  }
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); const form = new FormData(event.currentTarget)
+    if (!lines.length || lines.length > 500 || lines.some(l => !l.productId || !Number.isSafeInteger(l.quantity) || l.quantity < 1)) { setError('Choose 1–500 mapped products with positive whole-unit quantities.'); return }
+    setBusy(true); setError(null)
+    try {
+      const result = await mutate<PurchaseOrder>(id ? 'PUT' : 'POST', `/api/v1/purchase-orders${id ? `/${id}` : ''}`, { supplierId, orderDate: form.get('orderDate'), expectedDeliveryDate: form.get('expectedDeliveryDate') || null, remarks: form.get('remarks'), lines: lines.map(({ productId, quantity, supplierProductId, originalLineId, refreshPrice, catalogRowVersion }) => ({ productId, quantity, supplierProductId, originalLineId, refreshPrice, catalogRowVersion })), rowVersion: order?.rowVersion })
+      saved.current = true; setDirty(false); navigate(`/purchase-orders/${result.id}`, { replace: true })
     } catch (failure) { setError(failure) } finally { setBusy(false) }
   }
-  return <><Heading eyebrow="Purchasing" title={id ? `Edit ${order?.number ?? 'purchase order'}` : 'Create purchase order'} detail="Whole-unit supplier requests. No approval or stock movement is created." />
+  const shown = lines.map((line, index) => ({ line, index })).filter(({ line }) => (scope === 'all' || currentImport.includes(line.supplierProductId ?? '')) && `${line.sku} ${line.name} ${line.pricing?.barcode ?? ''}`.toLowerCase().includes(search.toLowerCase()))
+  return <><Heading eyebrow="Purchasing" title={id ? `Edit ${order?.number ?? 'purchase order'}` : 'Prepare purchase order'} detail="Import supplier availability, select products and enter required quantities. Prices are snapshots; stock changes only through receiving." />
     <ErrorMessage error={error || products.error || suppliers.error} />
-    {loading || products.loading || suppliers.loading ? <div className="panel"><LoadingSkeleton label="Loading order form…" /></div> : id && !order ? <Link className="text-button" to="/purchase-orders">Return to purchase orders</Link> : order?.status === 'Locked' ? <p className="notice error">Receiving has started. This purchase order is locked.</p> : <form onSubmit={save} className="space-y-6" aria-busy={busy}><fieldset disabled={busy} className="space-y-6"><section className="panel p-5 sm:p-6 space-y-5"><h2 className="form-section-title">Supplier & dates</h2><div className="form-grid"><Field label="Supplier"><Select name="supplierId" required defaultValue={order?.supplierId ?? ''}><option value="">Choose supplier</option>{suppliers.items.filter(item => item.isActive || item.id === order?.supplierId).map(item => <option value={item.id} key={item.id}>{item.code} · {item.name}{!item.isActive ? ' (inactive)' : ''}</option>)}</Select></Field><Field label="PO date"><input name="orderDate" type="date" required defaultValue={order?.orderDate ?? new Date().toISOString().slice(0, 10)} /></Field><Field label="Expected delivery date (optional)"><input name="expectedDeliveryDate" type="date" defaultValue={order?.expectedDeliveryDate ?? ''} /></Field></div><Field label="Remarks"><textarea name="remarks" maxLength={2000} defaultValue={order?.remarks ?? ''} /></Field></section>
-      <section className="panel p-5 sm:p-6"><div className="flex flex-wrap items-center justify-between gap-3 mb-5"><h2 className="form-section-title">Requested products</h2><Button variant="secondary" icon="plus" disabled={lines.length >= 500} onClick={() => setLines(current => [...current, { productId: '', quantity: 1 }])}>Add line</Button></div><div className="space-y-4">{lines.map((line, index) => <div key={index} className="line-editor"><div className="line-number">{index + 1}</div><Field label="Product"><Select required value={line.productId} onChange={event => change(index, { productId: event.target.value })}><option value="">Choose product</option>{products.items.filter(item => item.isActive || item.id === line.productId).map(item => <option key={item.id} value={item.id}>{item.code} · {item.name}{!item.isActive ? ' (inactive)' : ''}</option>)}</Select></Field><Field label="Quantity (units)"><input type="number" inputMode="numeric" min={1} max={Number.MAX_SAFE_INTEGER} step={1} required value={Number.isFinite(line.quantity) ? line.quantity : ''} onChange={event => change(index, { quantity: event.target.valueAsNumber })} /></Field><Button variant="danger" disabled={lines.length <= 1} onClick={() => setLines(current => current.filter((_, position) => position !== index))} aria-label={`Remove line ${index + 1}`}>Remove</Button></div>)}</div></section></fieldset>
-      <div className="editor-actions"><Link className="secondary" to={id ? `/purchase-orders/${id}` : '/purchase-orders'}>Cancel</Link><Button type="submit" loading={busy}>Save purchase order</Button></div></form>}
+    {loading || suppliers.loading ? <div className="panel"><LoadingSkeleton label="Loading order form…" /></div> : id && !order ? <Link className="text-button" to="/purchase-orders">Return to purchase orders</Link> : order?.status === 'Locked' ? <p className="notice error">Receiving has started. This purchase order is locked.</p> : <form onSubmit={save} onChange={() => setDirty(true)} className="space-y-4" aria-busy={busy}><fieldset disabled={busy} className="space-y-4"><section className="panel p-4 space-y-3"><div className="form-grid"><Field label="Supplier"><Select name="supplierId" required value={supplierId} disabled={lines.length > 0} onChange={e => { setSupplierId(e.target.value); setCurrentImport([]); setScope('all') }}><option value="">Choose supplier</option>{suppliers.items.filter(s => s.isActive || s.id === order?.supplierId).map(s => <option value={s.id} key={s.id}>{s.code} · {s.name}</option>)}</Select></Field><Field label="PO date"><input name="orderDate" type="date" required defaultValue={order?.orderDate ?? new Date().toISOString().slice(0, 10)} /></Field><Field label="Expected delivery date"><input name="expectedDeliveryDate" type="date" defaultValue={order?.expectedDeliveryDate ?? ''} /></Field></div><Field label="Remarks"><textarea name="remarks" rows={2} maxLength={2000} defaultValue={order?.remarks ?? ''} /></Field></section>
+    <section className="panel p-4 space-y-3"><div className="po-toolbar"><Button variant="secondary" disabled={!supplierId} onClick={() => setDialog('import')}>Import Excel</Button><Button variant="secondary" disabled={!supplierId} onClick={() => setDialog('catalog')}>Add existing products</Button><Button variant="secondary" disabled={!supplierId} onClick={() => { products.refresh(); setEditing(null); setDialog('manual') }}>Add manually</Button><Button variant="ghost" disabled={!supplierId || !lines.length} onClick={() => void refreshPrices()}>Refresh catalog prices</Button></div>
+      <div className="po-toolbar"><Field label="Common quantity"><input className="po-common" type="number" min={1} max={Number.MAX_SAFE_INTEGER} step={1} value={Number.isFinite(common) ? common : ''} onChange={e => setCommon(e.target.valueAsNumber)} /></Field><Button variant="secondary" disabled={!lines.length || !Number.isSafeInteger(common) || common < 1} onClick={() => { setLines(current => current.map(l => ({ ...l, quantity: common }))); setDirty(true) }}>Apply to all {lines.length} rows</Button><Field label="Search working list"><input type="search" value={search} onChange={e => setSearch(e.target.value)} /></Field>{currentImport.length > 0 && <Field label="Show"><Select value={scope} onChange={e => setScope(e.target.value as 'all' | 'current')}><option value="current">Current import</option><option value="all">All PO products</option></Select></Field>}</div>
+      <p className="field-hint">Showing {shown.length} of {lines.length} rows. Common quantity applies to all PO rows, including filtered rows. Supplier quantity is informational and never limits your order. Remove all rows to change supplier.</p>
+      {lines.length > 500 && <p className="notice error">A PO supports at most 500 lines. Remove unwanted rows before saving.</p>}
+      <div className="po-scroll"><table className="po-table po-working"><thead><tr><th>Code</th><th>Product name</th><th>Brand</th><th>Barcode</th><th className="num">RSP</th><th className="num">Supplier price</th><th>Discount</th><th className="num">Net unit price</th><th className="num">Required qty</th><th className="num">Line total</th><th>Actions</th></tr></thead><tbody>{shown.map(({ line: l, index }) => <tr key={l.supplierProductId ?? l.originalLineId ?? index}><td data-label="Code">{l.sku}</td><td data-label="Product">{l.name}{catalog[l.supplierProductId ?? '']?.availableQuantity != null && <small>Supplier qty: {catalog[l.supplierProductId!].availableQuantity}</small>}{!l.productId && <small className="text-red-700">Map WROS product before saving</small>}</td><td data-label="Brand">{l.pricing?.brand ?? '—'}</td><td data-label="Barcode">{l.pricing?.barcode ?? '—'}</td><td className="num" data-label="RSP">{priceLabel(l.pricing?.rsp)}</td><td className="num" data-label="Supplier price">{priceLabel(l.pricing?.supplierPrice)}</td><td data-label="Discount">{discountLabel(l.pricing?.discountType, l.pricing?.discountValue)}</td><td className="num" data-label="Net unit">{priceLabel(l.pricing?.netUnitPrice)}</td><td className="num" data-label="Required qty"><input aria-label={`Required quantity for ${l.sku}`} type="number" inputMode="numeric" min={1} max={Number.MAX_SAFE_INTEGER} step={1} required value={Number.isFinite(l.quantity) ? l.quantity : ''} onChange={e => { const quantity = e.target.valueAsNumber; setLines(current => current.map((row, i) => i === index ? { ...row, quantity } : row)); setDirty(true) }} /></td><td className="num" data-label="Line total">{l.pricing && Number.isSafeInteger(l.quantity) && l.quantity > 0 ? formatFils(fils(l.pricing.netUnitPrice) * BigInt(l.quantity)) : '—'}</td><td data-label="Actions"><div className="po-row-actions">{!l.productId && <Button variant="ghost" onClick={() => void editProduct(l)}>Map</Button>}<Button variant="ghost" aria-label={`Remove ${l.sku}`} onClick={() => { setLines(current => current.filter((_, i) => i !== index)); setDirty(true) }}>Remove</Button></div></td></tr>)}</tbody></table>{!shown.length && <p className="p-5 field-hint">{lines.length ? 'No products match this filter.' : 'Select a supplier, then import stock or add catalog products.'}</p>}</div>
+    </section><PricingSummary lines={lines} /></fieldset><div className="editor-actions"><Link className="secondary" to={id ? `/purchase-orders/${id}` : '/purchase-orders'}>Cancel</Link><Button type="submit" loading={busy}>Save purchase order</Button></div></form>}
+    {dialog === 'import' && <ExcelImportDialog supplierId={supplierId} onClose={() => setDialog(null)} onImported={items => add(items, true)} />}
+    {dialog === 'catalog' && <CatalogPicker supplierId={supplierId} onClose={() => setDialog(null)} onAdd={items => add(items)} onEdit={p => { products.refresh(); setEditing(p); setDialog('manual') }} />}
+    {dialog === 'manual' && <SupplierProductDialog supplierId={supplierId} item={editing} products={products.items} onClose={() => setDialog(null)} onSaved={p => { setCatalog(current => ({ ...current, [p.id]: p })); if (lines.some(l => l.supplierProductId === p.id)) { setLines(current => current.map(l => l.supplierProductId === p.id && !l.originalLineId ? { ...l, productId: p.productId ?? '', pricing: productSnapshot(p, l.quantity), catalogRowVersion: p.rowVersion, sku: p.code, name: p.name } : l)); setDirty(true); setDialog(null) } else if (p.productId && p.isActive) add([p]); else { setDialog('catalog') } }} />}
+    <Dialog open={blocker.state === 'blocked'} onClose={() => { if (blocker.state === 'blocked') blocker.reset() }} title="Leave unsaved purchase order?" description="Your quantities and preparation changes have not been saved."><div className="dialog-actions"><Button variant="secondary" onClick={() => { if (blocker.state === 'blocked') blocker.reset() }}>Keep editing</Button><Button variant="danger" onClick={() => { if (blocker.state === 'blocked') blocker.proceed() }}>Discard and leave</Button></div></Dialog>{confirmation}
   </>
 }

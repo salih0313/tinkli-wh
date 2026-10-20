@@ -22,6 +22,8 @@ public sealed class PurchaseOrderLine
     public Guid PurchaseOrderId { get; set; }
     public Guid ProductId { get; set; }
     public Product Product { get; set; } = null!;
+    public Guid? SupplierProductId { get; set; }
+    public string? PricingJson { get; set; }
     public int Position { get; set; }
     public decimal Quantity { get; set; }
 }

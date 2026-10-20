@@ -63,6 +63,12 @@ builder.Services.AddRateLimiter(options=>options.AddPolicy("integration",context
 builder.Services.AddScoped<Wros.Api.Modules.Integration.IntegrationService>();
 builder.Services.AddScoped<Wros.Api.Shared.Operations.MasterDataService>();
 builder.Services.AddScoped<Wros.Api.Shared.Operations.DocumentNumbers>();
+builder.Services.AddOptions<Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierImportOptions>().BindConfiguration("SupplierImport")
+    .ValidateDataAnnotations().Validate(o => o.DefaultCurrency == "KWD" && o.AllowedExtensions is [".xlsx"], "Supplier imports currently support KWD and .xlsx only.").ValidateOnStart();
+builder.Services.AddScoped<Wros.Api.Modules.Purchasing.SupplierCatalog.SupplierCatalogService>();
+builder.Services.AddOptions<Wros.Api.Modules.Purchasing.PurchaseOrderPrintOptions>().BindConfiguration("PurchaseOrderPrint")
+    .ValidateDataAnnotations().Validate(o => o.PageSize == "A4", "PO print currently supports A4 only.").ValidateOnStart();
+builder.Services.AddScoped<Wros.Api.Modules.Purchasing.PurchaseOrderPrintService>();
 builder.Services.AddScoped<Wros.Api.Modules.Purchasing.PurchaseOrderService>();
 builder.Services.AddScoped<Wros.Api.Modules.Receiving.ReceivingService>();
 builder.Services.AddScoped<Wros.Api.Modules.Receiving.ReceiptQueries>();

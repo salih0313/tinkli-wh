@@ -5,7 +5,7 @@ using Wros.Api.Modules.Identity;
 using Wros.Api.Modules.Purchasing;
 namespace Wros.Api.Controllers;
 [ApiController, Route("api/v1/purchase-orders"), Authorize(Policy = PermissionCatalog.PurchasingReadPolicy)]
-public sealed class PurchaseOrdersController(PurchaseOrderService service) : ControllerBase
+public sealed class PurchaseOrdersController(PurchaseOrderService service, PurchaseOrderPrintService printer) : ControllerBase
 {
     [HttpGet] public Task<PageDto<OrderDto>> List([Range(1, 100000)] int page = 1, [Range(1, 100)] int pageSize = 20, string? search = null, string? status = null) => service.List(page, pageSize, search, status);
     [HttpGet("{id:guid}")] public Task<OrderDto> Get(Guid id) => service.Get(id);
@@ -14,5 +14,7 @@ public sealed class PurchaseOrdersController(PurchaseOrderService service) : Con
     [HttpPut("{id:guid}"), Authorize(Policy = PermissionCatalog.PurchasingPolicy)] public Task<OrderDto> Update(Guid id, OrderRequest request) => service.Save(id, request);
     [HttpPost("{id:guid}/prepare-print"), Authorize(Policy = PermissionCatalog.PurchasingPolicy)]
     public async Task<IActionResult> PreparePrint(Guid id, VersionRequest request) { await service.PreparePrint(id, request); return NoContent(); }
+    [HttpPost("{id:guid}/print-document"), Authorize(Policy = PermissionCatalog.PurchasingPolicy)]
+    public async Task<object> Print(Guid id, VersionRequest request) { var order = await service.PreparePrint(id, request); return new { html = printer.Render(order) }; }
     [HttpPost("{id:guid}/send"), Authorize(Policy = PermissionCatalog.PurchasingPolicy)] public Task<OrderDto> Send(Guid id, VersionRequest request) => service.Send(id, request);
 }

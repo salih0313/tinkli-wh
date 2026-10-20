@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { createBrowserRouter, createRoutesFromElements, RouterProvider, Navigate, Outlet, Route } from 'react-router-dom'
 import { SessionProvider, useSession } from './auth/SessionContext'
 import { ErrorMessage } from './components/Form'
 import AppShell from './components/layout/AppShell'
@@ -46,8 +46,7 @@ function LoginRoute() {
   if (error) return <main className="p-8"><ErrorMessage error={error} /><button className="primary" onClick={() => void refresh().catch(() => {})}>Retry connection</button></main>
   return <Login />
 }
-export default function App() {
-  return <BrowserRouter><SessionProvider><Routes>
+const router = createBrowserRouter(createRoutesFromElements(<Route element={<SessionProvider><Outlet /></SessionProvider>}>
     <Route path="/login" element={<LoginRoute />} />
     <Route element={<Protected />}>
       <Route path="/password" element={<Password />} />
@@ -86,5 +85,5 @@ export default function App() {
       <Route element={<Access permission="audit.view" />}><Route path="/audit" element={<Audit />} /></Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Route>
-  </Routes></SessionProvider></BrowserRouter>
-}
+  </Route>))
+export default function App() { return <RouterProvider router={router} /> }

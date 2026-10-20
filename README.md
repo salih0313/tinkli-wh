@@ -1,6 +1,6 @@
 # WROS — Warehouse Receiving & Operations
 
-WROS is the physical inventory source of truth: a .NET 10 / EF Core 10 / SQL Server modular monolith with React, TypeScript, Vite and Tailwind. Phases 0–8 are implemented; **owner manual acceptance of the new work remains pending**. No automated test suite, production deployment or legacy e-commerce source/database change is included.
+WROS is the physical inventory source of truth: a .NET 10 / EF Core 10 / SQL Server modular monolith with React, TypeScript, Vite and Tailwind. Phases 0–8 and the Phase 3.1 supplier-catalog enhancement are implemented; **owner manual acceptance of the new work remains pending**. No automated test suite, production deployment or legacy e-commerce source/database change is included.
 
 Staff use ASP.NET Identity with secure HttpOnly, SameSite Strict, fixed-lifetime cookies and same-origin CSRF-protected mutations. Machine integration uses a separate scoped, single-use RS256 signed client assertion. There is no competing staff token mechanism, microservice, queue, cache or generic repository.
 
@@ -8,6 +8,7 @@ Staff use ASP.NET Identity with secure HttpOnly, SameSite Strict, fixed-lifetime
 
 - Identity: login/lockout, account activation, password changes, SuperAdmin staff/role administration, live database permissions, security audit.
 - Master data: suppliers, products, warehouse > area > rack > optional location, active status and concurrency checks.
+- Supplier catalog: bounded XLSX upload/mapping/preview, transactional imports/history, explicit product mapping, manual/catalog selection, discounted pricing snapshots and compact quantity preparation. [Phase 3.1 delivery](docs/phase-3.1-delivery.md) and [manual acceptance/setup](docs/phase-3.1-manual-checks.md).
 - Purchasing: year-based PO numbers, drafts/send/resend, revision snapshots, printable/browser Save as PDF, lock when receiving begins; sharing is manual.
 - Receiving: standalone/copied DN, flexible actual quantities/products/lots, expiry and split allocations; atomic posting and safe available-stock rack correction.
 - Inventory: physical/sellable/expired dashboard, product/location/lot explorer, hierarchy/batch filters, FIFO/FEFO suggestions, expiry alerts and immutable global ledger.
@@ -57,6 +58,7 @@ All previous migrations/data are retained. New additive migrations:
 
 - `20261018134244_Phase6CompletedStockMovements`
 - `20261018134809_Phase7Integration`
+- `20261019062315_Phase31SupplierCatalogPricing`
 
 Phase5 is read-only; Phase8 requires no additional schema migration. No demo master data, documents, stock or integration clients are seeded. [Migration instructions and read-only reconciliation SQL](docs/database-migrations.md).
 
@@ -104,4 +106,4 @@ The only newly direct runtime dependency is Microsoft.IdentityModel.JsonWebToken
 
 Earlier Phase0/1/1.5/2/3/4 guides are retained for regression. Builds/read-query inspections do not establish owner acceptance, real-volume performance or legacy cross-system behavior. Current limitations include retained expired snapshot/replay records pending an approved maintenance policy, deployment/key-ring planning, no arbitrary completed-transaction reversal workflow, and no configured low-stock thresholds.
 
-**Stop after Phase8. Owner manual results and explicit approval are required before production or further scope.**
+**Stop after Phase 3.1. Owner manual results and explicit approval are required before production or further scope.**
