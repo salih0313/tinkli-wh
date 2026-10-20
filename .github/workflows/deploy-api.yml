@@ -59,6 +59,35 @@ jobs:
           "FTP_DEPLOY_DIR=./$normalized/" >> $env:GITHUB_ENV
           Write-Host 'FTP destination verified: ./api/'
 
+      - name: Verify FTP Authentication
+        shell: pwsh
+        env:
+          FTP_SERVER: ${{ secrets.API_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.API_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.API_FTP_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:FTP_SERVER) -or
+              [string]::IsNullOrWhiteSpace($env:FTP_USERNAME) -or
+              [string]::IsNullOrWhiteSpace($env:FTP_PASSWORD)) {
+            throw 'One or more FTP secrets are missing.'
+          }
+          if ($env:FTP_SERVER -match '[/\\:]') {
+            throw 'API_FTP_SERVER must be a hostname only (no scheme, port, or path).'
+          }
+
+          Write-Host 'Testing plain FTP authentication and /api/ directory listing...'
+          curl.exe --fail --silent --show-error `
+            --connect-timeout 20 `
+            --max-time 60 `
+            --user "${env:FTP_USERNAME}:${env:FTP_PASSWORD}" `
+            "ftp://${env:FTP_SERVER}:21/api/"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "FTP test failed (curl exit code $LASTEXITCODE)."
+          }
+          Write-Host 'FTP authentication and directory listing succeeded.'
+
       - name: Deploy API
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
