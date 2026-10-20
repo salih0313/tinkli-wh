@@ -43,11 +43,12 @@ jobs:
           username: ${{ secrets.API_FTP_USERNAME }}
           password: ${{ secrets.API_FTP_PASSWORD }}
           server-dir: ${{ secrets.API_FTP_SERVER_DIR }}
-          protocol: ${{ vars.API_FTP_PROTOCOL || 'ftps' }}
+          protocol: ftp
           port: ${{ vars.API_FTP_PORT || '21' }}
           local-dir: ./artifacts/api/
           state-name: .wros-api-ftp-state.json
           dangerous-clean-slate: false
+          timeout: 120000
           exclude: |
             **/.git*
             **/.git*/**
