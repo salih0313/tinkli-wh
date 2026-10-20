@@ -84,6 +84,7 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
     context.ProblemDetails.Extensions["traceId"] = Activity.Current?.Id ?? context.HttpContext.TraceIdentifier;
 });
 builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
+builder.Services.AddHostedService<DatabaseMigrationService>();
 
 await using var app = builder.Build();
 app.UseMiddleware<CorrelationMiddleware>();
