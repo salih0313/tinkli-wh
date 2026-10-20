@@ -1,0 +1,59 @@
+name: Deploy API via FTP
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/Wros.Api/**'
+      - 'global.json'
+      - 'Wros.slnx'
+      - '**/Directory.Build.*'
+      - '**/Directory.Packages.props'
+      - '**/[Nn]u[Gg]et.[Cc]onfig'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-api-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Restore
+        run: dotnet restore src/Wros.Api/Wros.Api.csproj --locked-mode
+      - name: Publish
+        run: dotnet publish src/Wros.Api/Wros.Api.csproj --configuration Release --no-restore --output ./artifacts/api
+      - name: Remove configuration from upload
+        run: find ./artifacts/api -type f -iname 'appsettings*.json' -delete
+      - name: Deploy API
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.API_FTP_SERVER }}
+          username: ${{ secrets.API_FTP_USERNAME }}
+          password: ${{ secrets.API_FTP_PASSWORD }}
+          server-dir: ${{ secrets.API_FTP_SERVER_DIR }}
+          protocol: ${{ vars.API_FTP_PROTOCOL || 'ftps' }}
+          port: ${{ vars.API_FTP_PORT || '21' }}
+          local-dir: ./artifacts/api/
+          state-name: .wros-api-ftp-state.json
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/[Aa][Pp][Pp][Ss][Ee][Tt][Tt][Ii][Nn][Gg][Ss]*.[Jj][Ss][Oo][Nn]
+            **/app_offline.htm
+            **/logs/**
+            **/uploads/**
+            **/keys/**
