@@ -41,7 +41,7 @@ npm --prefix src/wros-web ci
 npm --prefix src/wros-web run dev
 ```
 
-Open **http://localhost:5173**. Vite proxies same-origin `/api` to **https://localhost:7243**. API health: `/api/v1/health/live` and `/api/v1/health/ready`. Development OpenAPI: `/openapi/v1.json`. If connection fails, trust the local HTTPS certificate and check SQL readiness; don't disable cookie security. Production SPA/API must share an HTTPS origin; deployment remains separately authorized.
+Open **http://localhost:5173**. Vite proxies same-origin `/api` to **https://localhost:7243**. API health: `/api/v1/health/live` and `/api/v1/health/ready`. Development Swagger UI: **https://localhost:7243/swagger**; raw OpenAPI: `/openapi/v1.json`. See [Swagger usage and manual checks](docs/swagger.md). If connection fails, trust the local HTTPS certificate and check SQL readiness; don't disable cookie security. Production SPA/API must share an HTTPS origin; deployment remains separately authorized.
 
 Production build verification:
 

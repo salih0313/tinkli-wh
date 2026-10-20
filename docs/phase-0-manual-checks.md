@@ -43,7 +43,7 @@ Run the setup in [README](../README.md) first. Use a dedicated Wros development 
    Expected: all return 200. System identifies WROS/v1/Phase 0; health status is Healthy. Ready includes the database check; live has no dependencies. Responses include `X-Correlation-ID`, `X-Content-Type-Options: nosniff` and `Cache-Control: no-store`; no server banner or credentials. Trust the development certificate; do not accept a permanent `-k` workaround.
 
 5. **Open development OpenAPI.** Visit `https://localhost:7243/openapi/v1.json` or the page link.
-   Expected: 200 JSON OpenAPI document documenting `/api/v1/system`. Health checks are middleware endpoints documented in README. The diagnostics probe is intentionally hidden from OpenAPI. There is no bundled Swagger UI.
+   Expected: 200 JSON OpenAPI document documenting `/api/v1/system`. Health checks are middleware endpoints documented in README. The diagnostics probe is intentionally hidden from OpenAPI. Swagger UI is now available in Development at `/swagger`; see [Swagger manual checks](swagger.md).
 
 6. **Verify safe errors and correlation.**
    ```sh

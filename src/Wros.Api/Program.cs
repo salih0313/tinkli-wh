@@ -102,7 +102,36 @@ app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
 app.Use(IdentityRegistration.UseSessionGuards);
-if (app.Environment.IsDevelopment()) app.MapOpenApi().AllowAnonymous();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi().AllowAnonymous();
+    app.MapSwaggerUI("swagger", options =>
+    {
+        options.DocumentTitle = "WROS API";
+        options.SwaggerEndpoint("../openapi/v1.json", "WROS API v1");
+        options.EnableFilter();
+        options.DisplayRequestDuration();
+        // Fetch a fresh token for each write: login/logout changes the token's identity.
+        // Keep cookies HttpOnly and retain the normal server-side CSRF validation.
+        options.UseRequestInterceptor("""
+            async (request) => {
+                const url = new URL(request.url, window.location.href);
+                if (url.origin === window.location.origin && url.pathname.startsWith('/api/v1/')) {
+                    request.credentials = 'same-origin';
+                    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method.toUpperCase())) {
+                        const response = await fetch('../api/v1/auth/csrf', {
+                            credentials: 'same-origin', cache: 'no-store'
+                        });
+                        if (!response.ok) throw new Error('Unable to obtain a CSRF token. Refresh and retry.');
+                        const body = await response.json();
+                        request.headers['X-CSRF-TOKEN'] = body.token;
+                    }
+                }
+                return request;
+            }
+            """);
+    }).AllowAnonymous();
+}
 app.MapControllers();
 app.MapHealthChecks("/api/v1/health/live", HealthOptions(false)).AllowAnonymous();
 app.MapHealthChecks("/api/v1/health/ready", HealthOptions(true)).AllowAnonymous();
