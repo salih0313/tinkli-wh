@@ -41,7 +41,7 @@ npm --prefix src/wros-web ci
 npm --prefix src/wros-web run dev
 ```
 
-Open **http://localhost:5173**. Vite proxies same-origin `/api` to **https://localhost:7243**. API health: `/api/v1/health/live` and `/api/v1/health/ready`. Development OpenAPI: `/openapi/v1.json`. If connection fails, trust the local HTTPS certificate and check SQL readiness; don't disable cookie security. Production SPA/API must share an HTTPS origin; deployment remains separately authorized.
+Open **http://localhost:5173**. Vite proxies same-origin `/api` to **https://localhost:7243**. API health: `/api/v1/health/live` and `/api/v1/health/ready`. Development Swagger UI: **https://localhost:7243/swagger**; raw OpenAPI: `/openapi/v1.json`. See [Swagger usage and manual checks](docs/swagger.md). If connection fails, trust the local HTTPS certificate and check SQL readiness; don't disable cookie security. Production SPA/API must share an HTTPS origin; deployment remains separately authorized.
 
 Production build verification:
 
@@ -53,6 +53,8 @@ npm --prefix src/wros-web run build
 VS Code: use the existing local WROS API Development launch profile if present; `.vscode` is intentionally ignored. Stop a running API before F5 uses ports7243/5243.
 
 ## Migrations and Development users
+
+For the first real production administrator, use the opt-in [production SuperAdmin bootstrap](docs/production-admin-seed.md). It uses secure server-supplied credentials and never resets existing accounts.
 
 The API automatically applies pending EF Core migrations at startup before accepting requests, including in Production. The SQL account must have migration permissions; failure stops startup. See [startup behavior and manual checks](docs/database-migrations.md#automatic-startup-migrations).
 
