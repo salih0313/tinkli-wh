@@ -27,6 +27,21 @@ Phase 5 is read-only; Phase 8 needs no additional schema change. All earlier mig
 
 Rollback of stock history is not a normal workflow. Earlier signed movement constraints cannot accept newer transaction types; don't run migration Down after posting such records. Restore a verified backup/recovery plan under owner supervision instead. Immutable movements and receipt originals must never be deleted to make a downgrade work.
 
+## Automatic startup migrations
+
+The API applies pending EF Core migrations on every startup, in all environments, before accepting HTTP requests. An up-to-date database requires no schema changes. A failure stops startup; logs report the failure without raw connection details. Migration commands have a three-minute timeout; normal API commands retain their existing timeout. No new migration or configuration flag is required for this change.
+
+Configure `ConnectionStrings:DefaultConnection` for the target database. The API SQL identity now needs permissions to apply schema changes (and create the database if it does not exist). Back up the database before deploying schema changes. Stop the old API during deployment and restart after all files are uploaded. Production never runs Development demo-user seeding; in Development, the existing EF seeding hook also runs during startup and skips existing users.
+
+Manual verification on a Development database:
+
+1. Run `dotnet run --project src/Wros.Api -- --environment Development` against a database with pending migrations. Expect migration-start/completion logs before the API listens, and pending migrations recorded in `__EFMigrationsHistory`.
+2. Restart against the same database. Expect successful startup with no repeated schema changes or password resets.
+3. Request `/api/v1/health/ready`. Expect Healthy after successful startup.
+4. Temporarily configure an unreachable SQL endpoint or an account lacking required schema permissions with a pending migration. Expect startup to fail and no HTTP traffic accepted. Restore the valid connection/permissions and restart; expect success.
+
+Database-backed checks require an accessible SQL Server; a successful build alone does not verify migration execution. The manual EF commands above remain available for inspection and controlled updates.
+
 ## Reconciliation (read only)
 
 ```sql

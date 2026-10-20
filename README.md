@@ -54,6 +54,8 @@ VS Code: use the existing local WROS API Development launch profile if present; 
 
 ## Migrations and Development users
 
+The API automatically applies pending EF Core migrations at startup before accepting requests, including in Production. The SQL account must have migration permissions; failure stops startup. See [startup behavior and manual checks](docs/database-migrations.md#automatic-startup-migrations).
+
 All previous migrations/data are retained. New additive migrations:
 
 - `20261018134244_Phase6CompletedStockMovements`

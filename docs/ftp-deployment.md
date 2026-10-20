@@ -14,7 +14,7 @@ Two independent workflows build and deploy on pushes to `main`. API changes depl
 
 Manually create the backend's `appsettings.json` before its first start. Use the tracked example and [configuration guide](configuration.md) for required settings. Keep real credentials in host environment variables/secret storage and set `ASPNETCORE_ENVIRONMENT=Production`. Disable development seeds. Configure persistent ASP.NET Core Data Protection keys outside the deployment directory.
 
-All `appsettings*.json` files are removed from the publish upload and excluded from FTP upload **and deletion**, preserving the server's manual configuration on every deployment. The workflow does not run database migrations or seed users. Back up the database and apply reviewed migrations separately using the [migration guide](database-migrations.md).
+All `appsettings*.json` files are removed from the publish upload and excluded from FTP upload **and deletion**, preserving the server's manual configuration on every deployment. The FTP workflow does not connect to SQL. When the API restarts, it automatically applies pending EF Core migrations before accepting requests; migration failure stops startup. Configure the API SQL identity with schema migration permissions and back up the database before deployment. Production does not seed demo users. See the [migration guide](database-migrations.md).
 
 ## 3. Add GitHub secrets
 
@@ -47,6 +47,6 @@ Under the **Variables** tab, optionally set `API_FTP_PROTOCOL` / `FRONTEND_FTP_P
 
 FTP uploads are not atomic: users can see mixed versions during deployment. For IIS, loaded API assemblies may be locked. Arrange an application stop/maintenance window or manually place `app_offline.htm` on the API host before uploading, then remove it after success (and handle recovery after failure). The workflow intentionally leaves that file alone. Other backend hosts need their own stop/restart procedure. Automatic maintenance/restart requires a hosting-specific mechanism and is not implemented here.
 
-Deployments of each app are serialized without canceling an active upload. GitHub may replace older pending runs when several pushes arrive quickly; a later selected run deploys the full current app. Failed deployments need a rerun or manual dispatch, especially if subsequent changes affect only the other app. Do not delete the remote `.wros-*-ftp-state.json` files: they track synchronization. Exclusions protect API settings even during deletion; destructive clean-slate mode is disabled. No automated tests, production database updates or seed operations are added.
+Deployments of each app are serialized without canceling an active upload. GitHub may replace older pending runs when several pushes arrive quickly; a later selected run deploys the full current app. Failed deployments need a rerun or manual dispatch, especially if subsequent changes affect only the other app. Do not delete the remote `.wros-*-ftp-state.json` files: they track synchronization. Exclusions protect API settings even during deletion; destructive clean-slate mode is disabled. The workflow adds no automated tests or seed operations. Database updates run in the API at startup.
 
 Action reference: [FTP Deploy Action inputs and exclusions](https://github.com/SamKirkland/FTP-Deploy-Action/tree/v4.3.6).
