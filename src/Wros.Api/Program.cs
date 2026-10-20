@@ -55,6 +55,9 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .WithMethods("GET").WithHeaders("Content-Type", CorrelationMiddleware.HeaderName)
     .WithExposedHeaders(CorrelationMiddleware.HeaderName)));
 builder.Services.AddWrosIdentity();
+builder.Services.AddOptions<ProductionAdminSeedOptions>().BindConfiguration("ProductionAdminSeed")
+    .Validate(options => !options.Enabled || builder.Environment.IsProduction(),
+        "ProductionAdminSeed may only be enabled in Production.").ValidateOnStart();
 builder.Services.AddAuthentication().AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, Wros.Api.Modules.Integration.IntegrationAuthentication>(Wros.Api.Modules.Integration.IntegrationAuthentication.SchemeName,_=>{});
 builder.Services.AddAuthorization(options => {
     foreach(var scope in new[]{"inventory.snapshot","orders.deduct"}) options.AddPolicy("Machine:"+scope,p=>p.AddAuthenticationSchemes(Wros.Api.Modules.Integration.IntegrationAuthentication.SchemeName).RequireAuthenticatedUser().RequireClaim("integration_client").RequireClaim("scope",scope));

@@ -18,6 +18,7 @@ public sealed class DatabaseMigrationService(
             database.SetCommandTimeout(TimeSpan.FromMinutes(3));
             await database.MigrateAsync(cancellationToken);
             logger.LogInformation("Database migrations completed successfully");
+            await Wros.Api.Modules.Identity.ProductionAdminSeed.RunAsync(scope.ServiceProvider, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -26,8 +27,8 @@ public sealed class DatabaseMigrationService(
         catch (Exception)
         {
             // Do not expose connection details from provider exception messages.
-            logger.LogCritical("Database migration failed; API startup stopped. Check database connectivity, schema permissions and migration history");
-            throw new InvalidOperationException("Database migration failed; API startup stopped. Check database connectivity, schema permissions and migration history.");
+            logger.LogCritical("Database migration or administrator bootstrap failed; API startup stopped. Check database connectivity, migration history and bootstrap configuration");
+            throw new InvalidOperationException("Database migration or administrator bootstrap failed; API startup stopped. Check database connectivity, migration history and bootstrap configuration.");
         }
     }
 

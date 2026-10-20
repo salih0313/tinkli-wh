@@ -17,6 +17,7 @@ Sources: appsettings.json non-secret keys/defaults; appsettings.Development.json
 | Integration:SnapshotMinutes | 1–1440, default 30 |
 | Integration:MaxSnapshotRows | 100–1,000,000, default 100,000; exceeding it rejects capture rather than truncating |
 | Seed:Enabled / SampleDataEnabled | Retained compatibility flags must stay false; no sample business transaction seed is provided |
+| ProductionAdminSeed:Enabled / UserName / Password | Opt-in first production SuperAdmin bootstrap; disabled by default. Supply credentials through secret configuration, then remove them after bootstrap. See [setup](production-admin-seed.md). |
 | Logging / Serilog | Structured logs, correlation IDs; EF sensitive logging disabled; never enable token/body/SQL credential logging |
 | AllowedHosts | Explicit deployment hostnames; local localhost/127.0.0.1 defaults |
 
