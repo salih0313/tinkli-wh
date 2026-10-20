@@ -23,32 +23,55 @@ concurrency:
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+
       - name: Restore
         run: dotnet restore src/Wros.Api/Wros.Api.csproj --locked-mode
+
       - name: Publish
         run: dotnet publish src/Wros.Api/Wros.Api.csproj --configuration Release --no-restore --output ./artifacts/api
+
       - name: Remove configuration from upload
-        run: find ./artifacts/api -type f -iname 'appsettings*.json' -delete
+        shell: pwsh
+        run: |
+          Get-ChildItem './artifacts/api' -Recurse -File |
+            Where-Object { $_.Name -like 'appsettings*.json' } |
+            Remove-Item -Force
+
+      - name: Validate FTP destination
+        shell: pwsh
+        env:
+          FTP_DIR: ${{ secrets.API_FTP_SERVER_DIR }}
+        run: |
+          $normalized = $env:FTP_DIR.Trim().Replace('\', '/').Trim('/')
+          if ($normalized -ne 'api') {
+            throw 'Invalid FTP destination. API_FTP_SERVER_DIR must point to /api/.'
+          }
+          "FTP_DEPLOY_DIR=./$normalized/" >> $env:GITHUB_ENV
+          Write-Host 'FTP destination verified: ./api/'
+
       - name: Deploy API
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.API_FTP_SERVER }}
           username: ${{ secrets.API_FTP_USERNAME }}
           password: ${{ secrets.API_FTP_PASSWORD }}
-          server-dir: ${{ secrets.API_FTP_SERVER_DIR }}
           protocol: ftp
-          port: ${{ vars.API_FTP_PORT || '21' }}
+          port: 21
           local-dir: ./artifacts/api/
+          server-dir: ${{ env.FTP_DEPLOY_DIR }}
+          timeout: 120000
           state-name: .wros-api-ftp-state.json
           dangerous-clean-slate: false
-          timeout: 120000
           exclude: |
             **/.git*
             **/.git*/**
