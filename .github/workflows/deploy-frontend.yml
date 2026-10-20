@@ -1,0 +1,53 @@
+name: Deploy frontend via FTP
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/wros-web/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-frontend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: src/wros-web/package-lock.json
+      - name: Install dependencies
+        working-directory: src/wros-web
+        run: npm ci
+      - name: Build
+        working-directory: src/wros-web
+        run: npm run build
+      - name: Deploy frontend
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FRONTEND_FTP_SERVER }}
+          username: ${{ secrets.FRONTEND_FTP_USERNAME }}
+          password: ${{ secrets.FRONTEND_FTP_PASSWORD }}
+          server-dir: ${{ secrets.FRONTEND_FTP_SERVER_DIR }}
+          protocol: ${{ vars.FRONTEND_FTP_PROTOCOL || 'ftps' }}
+          port: ${{ vars.FRONTEND_FTP_PORT || '21' }}
+          local-dir: ./src/wros-web/dist/
+          state-name: .wros-frontend-ftp-state.json
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/web.config
+            **/.htaccess
