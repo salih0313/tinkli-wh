@@ -33,6 +33,20 @@ jobs:
       - name: Build
         working-directory: src/wros-web
         run: npm run build
+      - name: Configure API URL
+        env:
+          FRONTEND_API_URL: ${{ vars.FRONTEND_API_URL }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+          const value = process.env.FRONTEND_API_URL?.trim();
+          if (!value) throw new Error('Set the GitHub Actions variable FRONTEND_API_URL to your API HTTPS origin.');
+          const url = new URL(value);
+          if (url.protocol !== 'https:' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
+            throw new Error('FRONTEND_API_URL must be an HTTPS origin without a path, credentials, query or fragment.');
+          }
+          writeFileSync('src/wros-web/dist/config.js', `window.WROS_CONFIG = ${JSON.stringify({ apiBaseUrl: url.origin })};\n`);
+          NODE
       - name: Deploy frontend
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:

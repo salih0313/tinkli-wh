@@ -2,15 +2,24 @@ export class ApiError extends Error {
   constructor(public status: number, message: string, public correlationId?: string) { super(message) }
 }
 
-// Same-origin requests keep HttpOnly cookies out of browser JavaScript.
-// Vite proxies /api and /openapi to the local HTTPS API in Development.
-export const apiBaseUrl = ''
+// Loaded before React from public/config.js; editable on the host without rebuilding.
+const configuredUrl = (window as Window & { WROS_CONFIG?: { apiBaseUrl?: string } }).WROS_CONFIG?.apiBaseUrl?.trim() ?? ''
+function validateApiBaseUrl(value: string): string {
+  if (!value) return ''
+  const url = new URL(value)
+  if (url.username || url.password || url.search || url.hash || url.pathname !== '/'
+    || (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname)))) {
+    throw new Error('API URL must be an HTTPS origin without a path, credentials, query or fragment.')
+  }
+  return url.origin
+}
+export const apiBaseUrl = validateApiBaseUrl(configuredUrl)
 
 async function send<T>(path: string, init: RequestInit = {}): Promise<T> {
   let response: Response
   try {
-    response = await fetch(path, {
-      ...init, credentials: 'same-origin',
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      ...init, credentials: 'include',
       signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
       headers: { Accept: 'application/json', 'X-Correlation-ID': crypto.randomUUID(), ...init.headers },
     })
@@ -45,7 +54,7 @@ export interface HealthReport {
   checks: { name: string; status: string }[]
 }
 export async function getHealth(kind: 'live' | 'ready', signal: AbortSignal): Promise<HealthReport> {
-  const response = await fetch(`/api/v1/health/${kind}`, { signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]) })
+  const response = await fetch(`${apiBaseUrl}/api/v1/health/${kind}`, { credentials: 'include', signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]) })
   if (!response.ok && response.status !== 503) throw new ApiError(response.status, 'Health check failed.')
   return response.json() as Promise<HealthReport>
 }
