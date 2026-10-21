@@ -10,7 +10,7 @@ Two independent workflows build and deploy on pushes to `main`. API changes depl
 - On the API host, set `Cors:AllowedOrigins` to the exact frontend origin (e.g. `["https://warehouse.example.com"]`, no trailing slash). Environment equivalent: `Cors__AllowedOrigins__0=https://warehouse.example.com`. Restart/redeploy the updated API: credentialed CORS now permits staff operations and the CSRF header.
 - If frontend and API use different sites (for example `warehouse.example.com` and `api.other.com`), set `Authentication:CrossSiteCookies=true` (environment: `Authentication__CrossSiteCookies=true`) and restart the API. Both session and CSRF cookies remain Secure and HttpOnly; CSRF validation remains required. For HTTPS subdomains of the same site, keep the default `false`. Browser third-party-cookie restrictions can still block login on unrelated sites; use HTTPS domains under the same parent domain for reliable cookie authentication, even when servers differ.
 - A reverse proxy remains optional: leave `apiBaseUrl` empty to use same-origin `/api` forwarding instead.
-- Preserve your manually configured frontend `web.config` or `.htaccess`; these are excluded from FTP synchronization.
+- The frontend build includes `public/.htaccess` for Apache/LiteSpeed SPA routing and no-store caching of `config.js`. FTP uploads this file on every deployment, replacing any host copy; keep required custom directives in the source file. Manually configured IIS `web.config` remains excluded from FTP synchronization.
 - Create FTP accounts restricted to each application's own directory. Use FTPS with a valid certificate where supported.
 
 ## 2. Configure the API once
@@ -64,3 +64,40 @@ Action reference: [FTP Deploy Action inputs and exclusions](https://github.com/S
 6. Refresh a nested frontend route. Expect the SPA to load through the host's index fallback.
 
 Owner verification of the deployed browser flow is required; builds alone do not verify hosting/CORS/cookie policy.
+
+## Direct frontend routes return 404
+
+React defines `/login`, but the static host must serve `index.html` for frontend paths that are not files or directories. Configure the frontend host only; do not apply SPA fallback to the API host. Existing API proxy rules, if used, must run before this fallback.
+
+For IIS with the URL Rewrite module installed, merge this rule into the frontend `web.config` under `configuration/system.webServer/rewrite/rules`:
+
+```xml
+<rule name="WROS SPA" stopProcessing="true">
+  <match url=".*" />
+  <conditions logicalGrouping="MatchAll">
+    <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+    <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+    <add input="{URL}" pattern="^/api(/|$)" negate="true" />
+  </conditions>
+  <action type="Rewrite" url="/index.html" />
+</rule>
+```
+
+For Apache/LiteSpeed with mod_rewrite and `.htaccess` overrides enabled, the deployed `.htaccess` already includes these rules:
+
+```apache
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/api(/|$)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
+```
+
+For Nginx, use `try_files $uri $uri/ /index.html;` in the frontend `location /` block, preserving any separate API location. Validate/reload server configuration through the hosting provider's normal process. FTP deployments preserve manually configured `web.config`; `.htaccess` is managed in `src/wros-web/public/.htaccess` and uploaded automatically.
+
+Manual checks after the session-focus fix:
+1. Open the signed-out login page. Expect one initial `/auth/me` session check (a 401 is normal). Switching away and back must not trigger more session checks while signed out. Development StrictMode may run the initial effect twice.
+2. Sign in and switch away/back. Expect a session check; sign out and repeat. Expect no further focus-triggered session checks while signed out.
+3. Open `/login` directly, then refresh a nested application route. Expect the React page to load instead of a hosting 404 after configuring the fallback.
+
+No migrations, seed changes or backend deployment are required for this session-focus fix. Build with `npm --prefix src/wros-web run build`, deploy the frontend, and verify these browser checks.
