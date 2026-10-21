@@ -6,7 +6,10 @@ Two independent workflows build and deploy on pushes to `main`. API changes depl
 
 - Backend: install the .NET 10 ASP.NET Core runtime (Hosting Bundle for IIS), configure the application/start command and HTTPS, SQL Server access and production environment. The workflow publishes a framework-dependent application; it does not provision hosting.
 - Frontend: configure a static website for `dist` contents, HTTPS and SPA fallback to `index.html` for browser routes.
-- **Configure a reverse proxy on the frontend host: `/api/*` must forward to the backend server, preserving the path, cookies and public request scheme/host as appropriate.** The apps run on separate servers, but the browser accesses the API through the frontend HTTPS origin. The current client uses relative URLs and same-origin cookies; simply setting a separate API URL or CORS is insufficient. Verify the hosting provider supports reverse proxying. Vite's development proxy is not part of the deployed static build. Ensure any health/dashboard API requests also use this proxy. Configure ASP.NET Core trusted proxy/forwarded-header handling for your actual topology if TLS is terminated upstream.
+- **Set the API URL in GitHub:** repository → Settings → Secrets and variables → Actions → Variables → New repository variable. Name: `FRONTEND_API_URL`; value: `https://YOUR_API_HOST` (HTTPS origin only, without `/api`). The workflow validates the variable, generates `dist/config.js`, and uploads it beside `index.html`. Missing or invalid values stop deployment before upload. This file is public; never add secrets. Serve it with `Cache-Control: no-store`. Changing the variable does not start deployment: run **Deploy frontend via FTP** again to publish the new URL. Each deployment overwrites any manual host edit to `config.js`.
+- On the API host, set `Cors:AllowedOrigins` to the exact frontend origin (e.g. `["https://warehouse.example.com"]`, no trailing slash). Environment equivalent: `Cors__AllowedOrigins__0=https://warehouse.example.com`. Restart/redeploy the updated API: credentialed CORS now permits staff operations and the CSRF header.
+- If frontend and API use different sites (for example `warehouse.example.com` and `api.other.com`), set `Authentication:CrossSiteCookies=true` (environment: `Authentication__CrossSiteCookies=true`) and restart the API. Both session and CSRF cookies remain Secure and HttpOnly; CSRF validation remains required. For HTTPS subdomains of the same site, keep the default `false`. Browser third-party-cookie restrictions can still block login on unrelated sites; use HTTPS domains under the same parent domain for reliable cookie authentication, even when servers differ.
+- A reverse proxy remains optional: leave `apiBaseUrl` empty to use same-origin `/api` forwarding instead.
 - Preserve your manually configured frontend `web.config` or `.htaccess`; these are excluded from FTP synchronization.
 - Create FTP accounts restricted to each application's own directory. Use FTPS with a valid certificate where supported.
 
@@ -39,7 +42,7 @@ Under the **Variables** tab, optionally set `API_FTP_PROTOCOL` / `FRONTEND_FTP_P
 
 1. Commit the workflow files and push/merge to `main`. Both workflow files changing starts both deployments. Follow progress under **Actions**.
 2. Confirm each workflow succeeds and each host contains its own built application, with no repository sources uploaded. Check the API's existing `appsettings.json` content/timestamp: it must remain unchanged.
-3. Open the frontend, refresh a nested page and sign in. Expect the page to load, `/api/v1/health/live` through the frontend to succeed, and login plus authenticated mutations to work through the proxy.
+3. Open the frontend, refresh a nested page and sign in. Expect the page to load, `/api/v1/health/live` through the frontend to succeed, and login plus authenticated mutations to work against the configured API.
 4. Push a frontend-only change. Expect only the frontend workflow to run. Push an API-only change: expect only the API workflow. Push documentation-only changes: expect neither.
 5. To deploy without source changes, open **Actions → Deploy API via FTP** or **Deploy frontend via FTP → Run workflow**, selecting `main`. Use this for a first deployment, retry/recovery, or after changing repository secrets/variables (those changes do not automatically start workflows).
 
@@ -50,3 +53,14 @@ FTP uploads are not atomic: users can see mixed versions during deployment. For 
 Deployments of each app are serialized without canceling an active upload. GitHub may replace older pending runs when several pushes arrive quickly; a later selected run deploys the full current app. Failed deployments need a rerun or manual dispatch, especially if subsequent changes affect only the other app. Do not delete the remote `.wros-*-ftp-state.json` files: they track synchronization. Exclusions protect API settings even during deletion; destructive clean-slate mode is disabled. The workflow adds no automated tests or seed operations. Database updates run in the API at startup.
 
 Action reference: [FTP Deploy Action inputs and exclusions](https://github.com/SamKirkland/FTP-Deploy-Action/tree/v4.3.6).
+
+## Manual acceptance for separate API hosting
+
+1. Deploy the updated API and frontend. Set the GitHub `FRONTEND_API_URL` variable and API CORS origin as above. No migration or seed command is needed.
+2. Reload the frontend with browser Network tools open. Expect health/session requests to target the configured API server.
+3. Sign in, load a protected list, and perform an authorized edit. Expect successful credentialed requests; preflight responses allow the exact frontend origin, credentials and `X-CSRF-TOKEN`.
+4. Sign out. Expect protected requests to require login again.
+5. Change `FRONTEND_API_URL` to another configured API environment, rerun the frontend workflow, and reload. Expect requests to use that origin. Restore the intended production variable and deploy again.
+6. Refresh a nested frontend route. Expect the SPA to load through the host's index fallback.
+
+Owner verification of the deployed browser flow is required; builds alone do not verify hosting/CORS/cookie policy.

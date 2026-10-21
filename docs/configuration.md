@@ -7,7 +7,7 @@ Sources: appsettings.json non-secret keys/defaults; appsettings.Development.json
 | ConnectionStrings:DefaultConnection | Real SQL connection from secrets; database required; Persist Security Info disabled; LocalDB Windows only; trusted encryption outside Development |
 | Authentication:SessionMinutes | Fixed secure staff cookie session, 1–60 minutes, existing default 15 |
 | Jwt:Issuer / Audience / AccessTokenMinutes | Retained foundation configuration; staff auth uses the approved cookie architecture, not a second JWT login mechanism |
-| Cors:AllowedOrigins | Explicit origins only, HTTPS outside Development; staff mutations are same-origin proxy + CSRF, not wildcard cross-origin cookie calls |
+| Cors:AllowedOrigins | Explicit origins only, HTTPS outside Development; staff mutations require CSRF; credentialed CORS uses only these exact trusted frontend origins |
 | Inventory:ExpiryAlertDays | 0–3650, default 30, UTC date window including today |
 | Integration:AllowedClients | Explicit permitted machine client IDs; empty disables all callers |
 | Integration:Audience | Exact HTTPS URI, local default https://localhost:7243/api/v1/integration |
@@ -26,3 +26,5 @@ See [local setup](local-development.md) for existing private-file Development us
 Keys/scopes are startup-validated and read through IOptions; restart after rotation/configuration changes. Database client active state is checked on every machine authentication. Machine private keys, signatures, real passwords and production connections must not enter Git, logs or issue bodies.
 
 SQL command timeout remains 10 seconds. Serializable stock operations may return safe conflicts/deadlocks instead of overselling. Snapshot capture application-lock timeout is 5 seconds. Page size maximum 100; most UI pages use 20. Max input document sizes and line limits are enforced server-side. No Redis/cache/broker is required.
+
+`Authentication:CrossSiteCookies` defaults to `false` (Strict). Set `true` only for cross-site frontend/API hosting to use SameSite=None on Secure session and CSRF cookies. See [deployment setup](ftp-deployment.md) for runtime API URL configuration and browser limitations.

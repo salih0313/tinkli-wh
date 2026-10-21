@@ -47,19 +47,21 @@ public static class IdentityRegistration
                 cookie.Cookie.Name = "__Host-Wros.Session";
                 cookie.Cookie.HttpOnly = true;
                 cookie.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                cookie.Cookie.SameSite = SameSiteMode.Strict;
+                cookie.Cookie.SameSite = session.Value.CrossSiteCookies ? SameSiteMode.None : SameSiteMode.Strict;
                 cookie.Cookie.Path = "/";
                 cookie.ExpireTimeSpan = TimeSpan.FromMinutes(session.Value.SessionMinutes);
                 cookie.SlidingExpiration = false;
                 cookie.EventsType = typeof(CookieSessionEvents);
             });
-        services.AddAntiforgery(options =>
+        services.AddAntiforgery();
+        services.AddOptions<AntiforgeryOptions>()
+            .Configure<Microsoft.Extensions.Options.IOptions<WrosSessionOptions>>((options, session) =>
         {
             options.HeaderName = "X-CSRF-TOKEN";
             options.Cookie.Name = "__Host-Wros.Csrf";
             options.Cookie.HttpOnly = true;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.Cookie.SameSite = SameSiteMode.Strict;
+            options.Cookie.SameSite = session.Value.CrossSiteCookies ? SameSiteMode.None : SameSiteMode.Strict;
             options.Cookie.Path = "/";
         });
         services.AddAuthorization(options =>

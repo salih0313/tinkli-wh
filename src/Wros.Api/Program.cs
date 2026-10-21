@@ -52,7 +52,9 @@ builder.Services.AddDbContext<WrosDbContext>((services, options) =>
 });
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
-    .WithMethods("GET").WithHeaders("Content-Type", CorrelationMiddleware.HeaderName)
+    .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")
+    .WithHeaders("Content-Type", "X-CSRF-TOKEN", CorrelationMiddleware.HeaderName)
+    .AllowCredentials()
     .WithExposedHeaders(CorrelationMiddleware.HeaderName)));
 builder.Services.AddWrosIdentity();
 builder.Services.AddOptions<ProductionAdminSeedOptions>().BindConfiguration("ProductionAdminSeed")

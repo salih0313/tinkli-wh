@@ -58,6 +58,7 @@ public sealed class InventoryOptions
 
 public sealed class WrosSessionOptions
 {
+    public bool CrossSiteCookies { get; set; }
     [Range(1, 60)] public int SessionMinutes { get; set; } = 15;
 }
 
