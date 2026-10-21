@@ -19,11 +19,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [])
   useEffect(() => {
     void refresh().catch(() => {})
-    const focus = () => { void refresh().catch(() => {}) }
     window.addEventListener('wros:unauthorized', clear)
-    window.addEventListener('focus', focus)
-    return () => { window.removeEventListener('wros:unauthorized', clear); window.removeEventListener('focus', focus) }
+    return () => window.removeEventListener('wros:unauthorized', clear)
   }, [refresh, clear])
+  const signedIn = user !== null
+  useEffect(() => {
+    if (!signedIn) return
+    const focus = () => { void refresh().catch(() => {}) }
+    window.addEventListener('focus', focus)
+    return () => window.removeEventListener('focus', focus)
+  }, [signedIn, refresh])
   useEffect(() => {
     if (!user?.expiresAt) return
     const remaining = new Date(user.expiresAt).getTime() - Date.now()
