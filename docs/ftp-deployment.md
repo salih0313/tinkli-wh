@@ -48,7 +48,9 @@ Under the **Variables** tab, optionally set `API_FTP_PROTOCOL` / `FRONTEND_FTP_P
 
 ## Operational limits
 
-FTP uploads are not atomic: users can see mixed versions during deployment. For IIS, loaded API assemblies may be locked. Arrange an application stop/maintenance window or manually place `app_offline.htm` on the API host before uploading, then remove it after success (and handle recovery after failure). The workflow intentionally leaves that file alone. Other backend hosts need their own stop/restart procedure. Automatic maintenance/restart requires a hosting-specific mechanism and is not implemented here.
+The API workflow supports IIS with the ASP.NET Core Hosting Bundle. After publishing and verifying FTP access, it uploads `/api/app_offline.htm`, waits 30 seconds for IIS to stop the application and release loaded assemblies, uploads application files, then deletes the maintenance file only after a successful upload. IIS can start the updated API on the next request. The sync action excludes the maintenance file so it remains present throughout upload. Users will temporarily receive the maintenance response; schedule deployments around warehouse activity. Even an idle running API can lock assemblies. See [Microsoft's app offline documentation](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/app-offline).
+
+If upload fails or the workflow is canceled, the maintenance file is intentionally retained: starting a partially updated API is unsafe. Rerun **Deploy API via FTP** on `main` to complete deployment and remove the file. If automatic removal fails after a successful upload, verify the upload completed before manually deleting `/api/app_offline.htm` through FTP. A runner termination can also leave this file behind. This is a maintenance deployment, with no automatic rollback or zero-downtime guarantee. If the host overrides ANCM's `shutdownTimeLimit` above 30 seconds, increase the workflow wait beyond that value. Persistent locks after shutdown require checking the IIS app pool or other processes with the hosting provider. Other backend hosts need their own stop/restart procedure. Frontend FTP uploads remain non-atomic.
 
 Deployments of each app are serialized without canceling an active upload. GitHub may replace older pending runs when several pushes arrive quickly; a later selected run deploys the full current app. Failed deployments need a rerun or manual dispatch, especially if subsequent changes affect only the other app. Do not delete the remote `.wros-*-ftp-state.json` files: they track synchronization. Exclusions protect API settings even during deletion; destructive clean-slate mode is disabled. The workflow adds no automated tests or seed operations. Database updates run in the API at startup.
 
@@ -114,3 +116,14 @@ Manual checks after the session-focus fix:
 3. Open `/login` directly, then refresh a nested application route. Expect the React page to load instead of a hosting 404 after configuring the fallback.
 
 No migrations, seed changes or backend deployment are required for this session-focus fix. Build with `npm --prefix src/wros-web run build`, deploy the frontend, and verify these browser checks.
+
+## Manual acceptance for IIS deployment file locks
+
+Changed files: `.github/workflows/deploy-api.yml` and this guide. No new secrets, application configuration, migration or seed commands are required. The existing API FTP account must be able to create and delete `/api/app_offline.htm`; `/api/` must be the IIS API application's root. Commit and push these changes to `main`, or run **Deploy API via FTP** after merging.
+
+1. Open the running API, then start the API deployment workflow. During **Take API offline and release IIS file locks**, expect `/api/app_offline.htm` to appear in FTP and API requests to receive the maintenance response.
+2. Watch **Deploy API**. Expect application files to upload without the IIS assembly-lock 550 error, while the maintenance file remains present.
+3. After **Bring API online** succeeds, expect the maintenance file to be absent. Request `/api/v1/health/live`, then sign in and load a protected screen. Expect a healthy API and normal authenticated operation. Confirm server `appsettings.json` remains unchanged.
+4. In a non-production environment, cancel during application upload. Expect the maintenance file to remain. Rerun the full workflow and expect a successful upload followed by maintenance-file removal and normal operation.
+
+Please verify these checks on the IIS host; local workflow inspection cannot confirm server file-lock release or FTP permissions.
