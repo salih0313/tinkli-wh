@@ -15,7 +15,7 @@ function validateApiBaseUrl(value: string): string {
 }
 export const apiBaseUrl = validateApiBaseUrl(configuredUrl)
 
-async function send<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function request(path: string, init: RequestInit = {}): Promise<Response> {
   let response: Response
   try {
     response = await fetch(`${apiBaseUrl}${path}`, {
@@ -35,11 +35,30 @@ async function send<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError(response.status, message ?? (response.status === 429 ? 'Too many attempts. Wait a minute and retry.' : `Request failed (${response.status}).`),
       problem.correlationId ?? response.headers.get('X-Correlation-ID') ?? undefined)
   }
+  return response
+}
+
+async function send<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await request(path, init)
   if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
 }
 
 export function get<T>(path: string, signal?: AbortSignal): Promise<T> { return send<T>(path, { signal }) }
+
+export async function download(path: string, fileName: string): Promise<void> {
+  const response = await request(path, { headers: { Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } })
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  try { link.click() } finally {
+    link.remove()
+    // Allow the browser to start reading the file before releasing its URL.
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  }
+}
 
 export async function mutate<T = void>(method: 'POST' | 'PUT', path: string, body?: unknown): Promise<T> {
   // Fetch a token bound to the current identity before every mutation; never persist it.

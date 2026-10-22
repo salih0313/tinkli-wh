@@ -65,6 +65,19 @@ Action reference: [FTP Deploy Action inputs and exclusions](https://github.com/S
 
 Owner verification of the deployed browser flow is required; builds alone do not verify hosting/CORS/cookie policy.
 
+## Supplier stock Excel template download
+
+The import dialog downloads the workbook through the shared API client, using the configured API origin and session cookies. Failed requests appear in the dialog instead of downloading an error page.
+
+Build with `npm --prefix src/wros-web run build` and deploy the frontend through the existing workflow. No backend deployment, new configuration, migrations or seeds are required; keep the existing `FRONTEND_API_URL` setting.
+
+1. Sign in with purchasing permission, open Create PO, select a supplier and open **Import supplier stock**.
+2. Click **Download Excel template**. Expect `wros-supplier-stock-template.xlsx` to download. In browser Network tools, expect the template request to target the configured API origin and return HTTP 200.
+3. Open the workbook in Excel. Expect supplier stock column headers, without a missing-file message or HTML content.
+4. Temporarily block the template request using browser Network tools and click download again. Expect an error in the dialog and the button to become available again. Remove the block and retry; expect a successful download.
+
+Owner verification on the production host is still required.
+
 ## Direct frontend routes return 404
 
 React defines `/login`, but the static host must serve `index.html` for frontend paths that are not files or directories. Configure the frontend host only; do not apply SPA fallback to the API host. Existing API proxy rules, if used, must run before this fallback.
