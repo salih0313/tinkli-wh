@@ -11,7 +11,7 @@ import { masterReaders } from '../../features/master-data/types'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 export function Brand({ compact = false }: { compact?: boolean }) {
-  return <span className="brand"><img className={`brand-logo${compact ? ' compact' : ''}`} src={compact ? '/branding/logo/logo_charactor.png' : '/branding/logo/logo_full.png'} alt={compact ? 'Tinkli' : 'Tinkli Kids Planet'} />{!compact && <span className="brand-caption">Warehouse operations · WROS</span>}</span>
+  return <span className="brand"><img className={`brand-logo${compact ? ' compact' : ''}`} src={compact ? '/branding/logo/logo_charactor.png' : '/branding/logo/logo_full.png'} alt={compact ? 'Tinkli' : 'Tinkli Kids Planet'} />{!compact && <span className="brand-caption">Tinkli kids planet Warehouse</span>}</span>
 }
 const pageNames: Record<string, string> = { '/inventory-overview':'Inventory overview','/inventory':'Inventory explorer','/expiry':'Expiry alerts','/stock-movements':'Stock movements','/supplier-returns':'Supplier returns','/disposals':'Damage & disposal','/transfers':'Warehouse transfers','/integration':'E-commerce integration', '/delivery-notes': 'Delivery notes', '/receipt-stock': 'Receipt stock', '/purchase-orders': 'Purchase orders', '/suppliers': 'Suppliers', '/products': 'Products', '/warehouses': 'Warehouses', '/areas': 'Warehouse areas', '/racks': 'Storage racks', '/locations': 'Locations', '/': 'Overview', '/users': 'Users', '/roles': 'Roles & permissions', '/audit': 'Security audit', '/password': 'Account & password', '/system': 'System status' }
 export default function AppShell() {
@@ -30,7 +30,7 @@ export default function AppShell() {
   useEffect(() => {
     setMobileOpen(false)
     if (userMenu.current) userMenu.current.open = false
-    document.title = `${title} · WROS`
+    document.title = `${title} · Tinkli kids planet Warehouse`
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [location.pathname, title])
   useEffect(() => {
@@ -76,21 +76,21 @@ export default function AppShell() {
     { to: '/password', label: 'Account & password', icon: 'key', group: 'Settings' },
   ]
   function navigation(compact = false) {
-    return <><div className="sidebar-brand"><NavLink to="/" aria-label="WROS overview"><Brand compact={compact} /></NavLink></div>
+    return <><div className="sidebar-brand"><NavLink to="/" aria-label="Tinkli kids planet Warehouse overview"><Brand compact={compact} /></NavLink></div>
       <nav aria-label="Main navigation" className="sidebar-nav">{links.map((link, index) => <div key={link.to}>
         {links[index - 1]?.group !== link.group && <p className={`nav-group ${compact ? 'compact-group' : ''}`}>{compact ? <span className="sr-only">{link.group}</span> : link.group}</p>}
         <NavLink to={link.to} end={link.to === '/'} className="nav-link" title={compact ? link.label : undefined} aria-label={compact ? link.label : undefined} onClick={() => setMobileOpen(false)}><Icon name={link.icon} />{!compact && <span>{link.label}</span>}</NavLink>
       </div>)}</nav>
-      <div className="sidebar-foot">{!compact && <><span className="sidebar-workspace"><Icon name="warehouse" />Shared workspace</span><p>All warehouses · v1</p></>}<Button variant="ghost" icon="logout" loading={busy} onClick={() => void logout()} aria-label={compact ? 'Sign out' : undefined} title={compact ? 'Sign out' : undefined}>{!compact && 'Sign out'}</Button></div></>
+      <div className="sidebar-foot">{!compact && <><span className="sidebar-workspace"><Icon name="warehouse" />Shared workspace</span><p>All warehouses · v1</p></>}<Button variant="ghost" className="logout-button" icon="logout" loading={busy} onClick={() => void logout()} aria-label={compact ? 'Sign out' : undefined} title={compact ? 'Sign out' : undefined}>{!compact && 'Sign out'}</Button></div></>
   }
   return <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
     <a href="#main" className="skip-link">Skip to content</a>
-    <aside className="desktop-sidebar">{navigation(collapsed)}<IconButton label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} icon="collapse" className="collapse-button" onClick={() => setCollapsed(value => !value)} aria-expanded={!collapsed} /></aside>
+    <aside className="desktop-sidebar"><IconButton label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} icon="collapse" className="collapse-button" onClick={() => setCollapsed(value => !value)} aria-expanded={!collapsed} />{navigation(collapsed)}</aside>
     <dialog ref={drawer} className="nav-drawer" aria-label="Main navigation" onCancel={event => { event.preventDefault(); setMobileOpen(false) }}>
       <IconButton label="Close navigation" icon="close" className="drawer-close" onClick={() => setMobileOpen(false)} />{navigation()}
     </dialog>
     <div className="app-workspace"><header className="topbar"><div className="topbar-title"><button ref={menuButton} className="button ghost icon-button mobile-menu-button" aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><Icon name="menu" /></button><span className="breadcrumb-root">Workspace<Icon name="chevron" width="14" height="14" /></span><span>{title}</span></div>
-      <details ref={userMenu} className="user-menu"><summary aria-label={`Account menu for ${user?.userName}`}><span className="avatar">{user?.userName.slice(0, 2).toUpperCase()}</span><span className="user-menu-name"><strong>{user?.userName}</strong><small>{humanize(user?.roles[0] ?? 'Staff')}</small></span><Icon name="down" width="16" height="16" /></summary><div className="user-menu-panel"><p>Signed in as<strong>{user?.userName}</strong></p><NavLink to="/password"><Icon name="key" />Account & password</NavLink><Button variant="ghost" icon="logout" loading={busy} onClick={() => void logout()}>Sign out</Button></div></details>
-    </header><main id="main" className="page-content" tabIndex={-1}><ErrorMessage error={error} /><Outlet /></main><footer className="workspace-footer"><span>WROS · Warehouse Receiving & Operations</span><span>Warehouse operations workspace</span></footer></div>
+      <details ref={userMenu} className="user-menu"><summary aria-label={`Account menu for ${user?.userName}`}><span className="avatar">{user?.userName.slice(0, 2).toUpperCase()}</span><span className="user-menu-name"><strong>{user?.userName}</strong><small>{humanize(user?.roles[0] ?? 'Staff')}</small></span><Icon name="down" width="16" height="16" /></summary><div className="user-menu-panel"><p>Signed in as<strong>{user?.userName}</strong></p><NavLink to="/password"><Icon name="key" />Account & password</NavLink><Button variant="ghost" className="logout-button" icon="logout" loading={busy} onClick={() => void logout()}>Sign out</Button></div></details>
+    </header><main id="main" className="page-content" tabIndex={-1}><ErrorMessage error={error} /><Outlet /></main><footer className="workspace-footer"><span>Tinkli kids planet Warehouse</span><span>Warehouse operations workspace</span></footer></div>
   </div>
 }

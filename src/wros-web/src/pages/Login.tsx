@@ -11,7 +11,7 @@ import { PasswordInput } from '../components/forms/PasswordInput'
 
 export default function Login() {
   const { user, refresh } = useSession()
-  useEffect(() => { document.title = 'Sign in · WROS' }, [])
+  useEffect(() => { document.title = 'Sign in · Tinkli kids planet Warehouse' }, [])
   const [error, setError] = useState<unknown>(null)
   const [busy, setBusy] = useState(false)
   if (user) return <Navigate to={user.mustChangePassword ? '/password' : '/'} replace />
@@ -28,9 +28,9 @@ export default function Login() {
     finally { setBusy(false) }
   }
   return <main className="login-page">
-    <aside className="login-story"><Brand /><div className="login-story-copy"><p className="eyebrow">Your operations, connected</p><h2>A clear view.<br />A confident team.</h2><p>One workspace for the people behind your warehouse operations.</p></div><div className="warehouse-graphic" aria-hidden="true"><Icon name="warehouse" /></div><p className="login-story-footer"><Icon name="shield" width="16" height="16" />Warehouse Receiving & Operations System</p></aside>
+    <aside className="login-story"><Brand /><div className="login-story-copy"><p className="eyebrow">Your operations, connected</p><h2>A clear view.<br />A confident team.</h2><p>One workspace for the people behind your warehouse operations.</p></div><div className="warehouse-graphic" aria-hidden="true"><Icon name="warehouse" /></div><p className="login-story-footer"><Icon name="shield" width="16" height="16" />Tinkli kids planet Warehouse</p></aside>
     <section className="login-main" aria-labelledby="login-title"><div className="login-mobile-brand"><Brand /></div><div className="login-form-wrap">
-      <span className="login-lock"><Icon name="lock" /></span><p className="eyebrow">Welcome to WROS</p><h1 id="login-title">Sign in to your workspace</h1>
+      <span className="login-lock"><Icon name="lock" /></span><p className="eyebrow">Welcome to Tinkli kids planet Warehouse</p><h1 id="login-title">Sign in to your workspace</h1>
       <p className="login-intro">Enter your account details to get started.</p>
       <form onSubmit={submit} className="space-y-5" aria-busy={busy}>
         <ErrorMessage error={error} />
@@ -39,6 +39,6 @@ export default function Login() {
         <Button type="submit" className="w-full" loading={busy} icon="arrow">{busy ? 'Signing in…' : 'Sign in'}</Button>
       </form>
       <p className="login-support">Need access or a password reset?<br />Contact your SuperAdmin for help with your account.</p>
-    </div><p className="login-footer">WROS · A workspace built for your operations</p></section>
+    </div><p className="login-footer">Tinkli kids planet Warehouse</p></section>
   </main>
 }

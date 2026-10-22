@@ -118,7 +118,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi().AllowAnonymous();
     app.MapSwaggerUI("swagger", options =>
     {
-        options.DocumentTitle = "Tinkli · WROS API";
+        options.DocumentTitle = "Tinkli kids planet Warehouse API";
         options.HeadContent = """
             <link rel="icon" type="image/png" href="../branding/fav/favicon-32x32.png" />
             <link rel="shortcut icon" href="../branding/fav/favicon.ico" />
