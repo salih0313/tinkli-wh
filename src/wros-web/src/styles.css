@@ -396,3 +396,17 @@ textarea:focus { outline: 3px solid #957bcf; outline-offset: 3px; }
   .sidebar-collapsed .sidebar-foot { padding: 8px 18px 2px; }
   .sidebar-collapsed .collapse-button { margin-bottom: 8px; }
 }
+
+.brand-caption { max-width: 174px; line-height: 1.5; }
+.sidebar-foot .logout-button, .user-menu-panel .logout-button {
+  color: #8b245c; background: #fdf2f6; border: 1px solid #fdb1cd;
+  padding-inline: 10px;
+}
+.sidebar-foot .logout-button:hover:not(:disabled), .user-menu-panel .logout-button:hover:not(:disabled) {
+  color: #711947; background: #fbdde9; border-color: #e82e98;
+}
+@media (min-width: 1024px) {
+  .collapse-button { margin: 8px 14px 0; }
+  .sidebar-collapsed .collapse-button { margin: 8px 18px 0; }
+  .desktop-sidebar .sidebar-brand { padding-top: 8px; }
+}
