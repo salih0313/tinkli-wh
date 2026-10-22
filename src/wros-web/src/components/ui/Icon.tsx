@@ -23,7 +23,8 @@ const paths = {
   lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
   eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12ZM15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0',
   eyeOff: 'm3 3 18 18M10.5 5.1 12 5c6 0 10 7 10 7a20 20 0 0 1-3 3.8M6 6.5A24 24 0 0 0 2 12s4 7 10 7a12 12 0 0 0 5-1.2M10 10a3 3 0 0 0 4 4',
-  collapse: 'M4 3h16v18H4zM9 3v18m7-13-4 4 4 4',
+  collapse: 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM9 4v16m7-11-3 3 3 3',
+  expand: 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM9 4v16m4-11 3 3-3 3',
   external: 'M14 3h7v7M21 3 10 14M10 3H3v18h18v-7',
 } as const
 export type IconName = keyof typeof paths
