@@ -1,0 +1,7 @@
+.swagger-ui .topbar { background: #6147a6; border-bottom: 4px solid; border-image: linear-gradient(110deg, #e82e98, #6147a6, #2da6e9) 1; }
+.swagger-ui .topbar .link img, .swagger-ui .topbar .link svg { display: none; }
+.swagger-ui .topbar .link { min-width: 190px; min-height: 82px; background: white url('./logo/logo_full.png') center / contain no-repeat; border-radius: 8px; }
+.swagger-ui .info { background: #d2d3fb; padding: 24px; border-radius: 12px; }
+.swagger-ui .btn.authorize { color: #6147a6; border-color: #6147a6; }
+.swagger-ui .btn.authorize svg { fill: #6147a6; }
+.swagger-ui .topbar .download-url-wrapper .download-url-button { background: #6147a6; border: 1px solid white; }
