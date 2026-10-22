@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import WarehouseHierarchy from './WarehouseHierarchy'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { get, mutate } from '../api/client'
@@ -23,6 +24,10 @@ const definitions = {
   locations: { title: 'Bins, drawers & trays', singular: 'location', permission: 'warehouses.manage', parent: 'racks', child: '' },
 } as const
 export default function MasterData({ kind }: { kind: MasterKind }) {
+  if (kind !== 'products' && kind !== 'suppliers') return <WarehouseHierarchy kind={kind} />
+  return <MasterDataTable kind={kind} />
+}
+function MasterDataTable({ kind }: { kind: MasterKind }) {
   const definition = definitions[kind]; const { parentId } = useParams()
   const { user } = useSession(); const canManage = user?.permissions.includes(definition.permission)
   const [data, setData] = useState<Page<MasterRecord> | null>(null)

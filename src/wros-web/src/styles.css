@@ -426,3 +426,96 @@ textarea:focus { outline: 3px solid #957bcf; outline-offset: 3px; }
   .sidebar-collapsed .topbar .collapse-button { margin: 0; }
   .desktop-sidebar .sidebar-brand { padding-top: 20px; }
 }
+
+/* Warehouse hierarchy: nested cards with local actions and lazy-loaded branches. */
+.hierarchy-guide { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 18px 20px; margin-bottom: 20px; background: #f5f0fd; border-color: #d2d3fb; color: #6147a6; }
+.hierarchy-guide > span { font-size: 13px; font-weight: 600; }
+.hierarchy-guide > span span { padding-inline: 7px; color: #957bcf; }
+.hierarchy-guide p { flex-basis: 100%; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.hierarchy-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.hierarchy-toolbar .search-control { flex: 1 1 280px; }
+.hierarchy-toolbar .status-filter { width: 145px; }
+.hierarchy-count { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+.hierarchy-list { list-style: none; margin: 0; padding: 0; }
+.hierarchy-roots { display: grid; gap: 14px; }
+.hierarchy-roots > .hierarchy-node { background: white; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 3px 12px #39265305; }
+.hierarchy-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px; }
+.hierarchy-row > .icon-button { color: #6147a6; background: #f5f0fd; }
+.hierarchy-identity { flex: 1; min-width: 100px; }
+.hierarchy-type { display: block; color: #6147a6; text-transform: uppercase; font-size: 9px; letter-spacing: 1px; margin-bottom: 4px; }
+.hierarchy-identity strong { display: block; font-size: 14px; font-weight: 650; overflow-wrap: anywhere; }
+.hierarchy-code { display: block; margin-top: 4px; font: 11px ui-monospace, monospace; color: var(--muted); overflow-wrap: anywhere; }
+.hierarchy-identity p { font-size: 12px; color: var(--muted); line-height: 1.7; margin-top: 6px; }
+.hierarchy-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.hierarchy-actions .button { font-size: 11px; padding: 8px 10px; }
+.hierarchy-actions .hierarchy-deactivate { color: #a12939; }
+.hierarchy-children { margin: 0 16px 16px 36px; padding-left: 12px; border-left: 2px solid #d2d3fb; }
+.hierarchy-children[hidden] { display: none; }
+.hierarchy-children .hierarchy-node { border-top: 1px solid var(--border); }
+.hierarchy-children .hierarchy-row { padding: 14px 8px; }
+.hierarchy-leaf { width: 44px; display: flex; justify-content: center; color: #957bcf; }
+.hierarchy-empty { padding: 20px 12px; font-size: 12px; color: var(--muted); }
+.hierarchy-empty p { margin-bottom: 12px; }
+@media (max-width: 767px) {
+  .hierarchy-actions { flex-basis: 100%; padding-left: 0; }
+  .hierarchy-children { margin-left: 14px; margin-right: 6px; padding-left: 8px; }
+  .hierarchy-row { gap: 8px; padding: 12px; }
+  .hierarchy-guide > span { font-size: 11px; }
+  .hierarchy-guide > span span { padding-inline: 3px; }
+}
+
+/* Warehouse overview cards and compact management tree. */
+.warehouse-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 16px; }
+.warehouse-card { padding: 18px; display: flex; flex-direction: column; }
+.warehouse-card-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.warehouse-card-icon { color: #6147a6; background: #f5f0fd; border-radius: 9px; padding: 9px; }
+.warehouse-card h2 { font-size: 16px; font-weight: 650; line-height: 1.5; }
+.warehouse-card h2 a:hover { color: #6147a6; }
+.warehouse-card-description { font-size: 12px; color: var(--muted); margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.warehouse-card-counts { display: grid; grid-template-columns: repeat(3, 1fr); padding-block: 16px; margin-top: auto; gap: 8px; }
+.warehouse-card-counts dd { font-size: 22px; font-weight: 650; color: #392653; }
+.warehouse-card-counts dt { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.warehouse-manage-link { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border); color: #6147a6; font-size: 12px; font-weight: 600; min-height: 44px; }
+.compact-tree { padding: 8px 12px; }
+.tree-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); padding: 4px 4px 8px; color: var(--muted); font-size: 11px; }
+.compact-tree .hierarchy-roots { gap: 0; }
+.compact-tree .hierarchy-roots > .hierarchy-node { border: 0; border-radius: 0; box-shadow: none; }
+.compact-tree .hierarchy-row { padding: 5px 6px; gap: 8px; min-height: 42px; border-radius: 6px; flex-wrap: nowrap; }
+.compact-tree .hierarchy-row:hover, .compact-tree .hierarchy-row:focus-within { background: #f5f0fd; }
+.compact-tree .hierarchy-row > .icon-button { width: 28px; min-width: 28px; min-height: 28px; padding: 5px; background: transparent; }
+.compact-tree .hierarchy-row .icon-button svg { width: 15px; height: 15px; }
+.compact-tree .hierarchy-identity { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.compact-tree .hierarchy-type { margin: 0; font-size: 8px; min-width: 48px; }
+.compact-tree .hierarchy-identity strong { font-size: 12px; }
+.compact-tree .hierarchy-code { margin: 0; font-size: 10px; }
+.compact-tree .hierarchy-identity p { display: none; }
+.compact-tree .status-badge { padding: 2px 6px; font-size: 9px; flex-shrink: 0; }
+.compact-tree .hierarchy-children { margin: 0 0 0 19px; padding-left: 9px; border-left-width: 1px; }
+.compact-tree .hierarchy-children .hierarchy-node { border: 0; }
+.compact-tree .hierarchy-leaf { width: 28px; flex-shrink: 0; }
+.compact-tree .hierarchy-leaf svg { width: 13px; height: 13px; }
+.compact-tree .hierarchy-actions { flex-shrink: 0; gap: 2px; }
+.compact-tree .hierarchy-actions .button { min-height: 30px; font-size: 10px; padding: 4px 7px; }
+.compact-tree .hierarchy-actions svg { width: 13px; height: 13px; }
+.compact-tree .hierarchy-empty { padding: 7px 10px; font-size: 11px; }
+.compact-tree .hierarchy-empty p { margin: 0; }
+.compact-tree .hierarchy-empty .button { min-height: 30px; padding: 4px 7px; font-size: 10px; margin-top: 5px; }
+@media (hover: hover) and (pointer: fine) {
+  .compact-tree .hierarchy-actions { opacity: 0; pointer-events: none; }
+  .compact-tree .hierarchy-row:hover > .hierarchy-actions,
+  .compact-tree .hierarchy-row:focus-within > .hierarchy-actions { opacity: 1; pointer-events: auto; }
+}
+@media (max-width: 767px) {
+  .compact-tree { padding: 6px; }
+  .compact-tree .hierarchy-row { flex-wrap: wrap; }
+  .compact-tree .hierarchy-identity { flex: 1; }
+  .compact-tree .hierarchy-type { min-width: auto; }
+  .compact-tree .hierarchy-actions { flex-basis: 100%; padding-left: 32px; order: 1; }
+  .compact-tree .hierarchy-actions .button { min-height: 44px; }
+  .compact-tree .hierarchy-row > .icon-button { min-height: 44px; min-width: 32px; }
+  .compact-tree .hierarchy-children { margin-left: 10px; padding-left: 6px; }
+}
+@media (hover: none) and (min-width: 768px) {
+  .compact-tree .hierarchy-actions .button { min-height: 44px; }
+  .compact-tree .hierarchy-row { flex-wrap: wrap; }
+}

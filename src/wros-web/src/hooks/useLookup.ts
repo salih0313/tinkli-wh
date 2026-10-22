@@ -11,7 +11,7 @@ export async function allPages<T>(path: string, signal?: AbortSignal): Promise<T
     page += 1
   }
 }
-export function useLookup<T>(path: string | null) {
+export function useLookup<T>(path: string | null, refreshKey = 0) {
   const [revision, setRevision] = useState(0)
   const [items, setItems] = useState<T[]>([])
   const [error, setError] = useState<unknown>(null)
@@ -22,6 +22,6 @@ export function useLookup<T>(path: string | null) {
     allPages<T>(path, controller.signal).then(setItems).catch(failure => { if (!controller.signal.aborted) setError(failure) })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
-  }, [path, revision])
+  }, [path, revision, refreshKey])
   return { items, error, loading, refresh: () => setRevision(value => value + 1) }
 }

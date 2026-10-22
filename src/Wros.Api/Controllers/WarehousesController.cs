@@ -12,6 +12,10 @@ public sealed class WarehousesController(MasterDataService service) : Controller
     [HttpGet]
     public Task<PageDto<MasterDto>> List([Range(1, 100000)] int page = 1, [Range(1, 100)] int pageSize = 20,
         string? search = null, bool? active = null, Guid? parentId = null) => service.List<Warehouse>(page, pageSize, search, active, parentId);
+    [HttpGet("counts")]
+    public Task<WarehouseCountDto[]> Counts(CancellationToken cancellationToken) => service.WarehouseCounts(cancellationToken);
+    [HttpGet("{id:guid}/structure")]
+    public Task<WarehouseStructureDto> Structure(Guid id, CancellationToken cancellationToken) => service.WarehouseStructure(id, cancellationToken);
     [HttpGet("{id:guid}")]
     public Task<MasterDto> Get(Guid id) => service.Get<Warehouse>(id);
     [HttpPost, Authorize(Policy = PermissionCatalog.WarehousesPolicy)]

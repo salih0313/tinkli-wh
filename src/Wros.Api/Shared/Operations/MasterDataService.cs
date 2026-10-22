@@ -20,9 +20,28 @@ public sealed record MasterDto(Guid Id, string Code, string Name, string? Descri
     string? ContactPerson, string? Phone, string? Email, string? Address, string? Remarks,
     string? Barcode, string? Brand, bool TrackExpiry, string? ExternalProductId);
 
+public sealed record WarehouseCountDto(Guid Id, int Areas, int Racks, int Locations);
+public sealed record WarehouseStructureDto(MasterDto Warehouse, MasterDto[] Areas, MasterDto[] Racks, MasterDto[] Locations);
+
 // Shared maintenance for the six master lists, directly using EF Core (no repository layer).
 public sealed class MasterDataService(WrosDbContext db, AuditService audit)
 {
+    public Task<WarehouseCountDto[]> WarehouseCounts(CancellationToken cancellationToken) => db.Warehouses.AsNoTracking()
+        .OrderBy(w => w.Code).Select(w => new WarehouseCountDto(w.Id,
+            db.WarehouseAreas.Count(a => a.WarehouseId == w.Id),
+            db.StorageRacks.Count(r => r.Area.WarehouseId == w.Id),
+            db.StorageLocations.Count(l => l.Rack.Area.WarehouseId == w.Id)))
+        .ToArrayAsync(cancellationToken);
+
+    public async Task<WarehouseStructureDto> WarehouseStructure(Guid id, CancellationToken cancellationToken)
+    {
+        var warehouse = await Get<Warehouse>(id);
+        var areas = await Query<WarehouseArea>().AsNoTracking().Where(a => a.WarehouseId == id).OrderBy(a => a.Code).ToArrayAsync(cancellationToken);
+        var racks = await Query<StorageRack>().AsNoTracking().Where(r => r.Area.WarehouseId == id).OrderBy(r => r.Code).ToArrayAsync(cancellationToken);
+        var locations = await Query<StorageLocation>().AsNoTracking().Where(l => l.Rack.Area.WarehouseId == id).OrderBy(l => l.Code).ToArrayAsync(cancellationToken);
+        return new(warehouse, areas.Select(ToDto).ToArray(), racks.Select(ToDto).ToArray(), locations.Select(ToDto).ToArray());
+    }
+
     public async Task<PageDto<MasterDto>> List<T>(int page, int pageSize, string? search, bool? active, Guid? parentId) where T : MasterRecord
     {
         var query = Query<T>().AsNoTracking();

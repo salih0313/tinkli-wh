@@ -74,6 +74,7 @@ const router = createBrowserRouter(createRoutesFromElements(<Route element={<Ses
         <Route path="/suppliers" element={<MasterData key="suppliers" kind="suppliers" />} />
         <Route path="/products" element={<MasterData key="products" kind="products" />} />
         <Route path="/warehouses" element={<MasterData key="warehouses" kind="warehouses" />} />
+        <Route path="/warehouses/:warehouseId/manage" element={<MasterData key="warehouse-manage" kind="warehouses" />} />
         <Route path="/areas" element={<MasterData key="areas" kind="areas" />} />
         <Route path="/racks" element={<MasterData key="racks" kind="racks" />} />
         <Route path="/locations" element={<MasterData key="locations" kind="locations" />} />
