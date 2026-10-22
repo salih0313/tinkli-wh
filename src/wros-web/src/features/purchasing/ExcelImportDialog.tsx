@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { get, mutate, upload } from '../../api/client'
+import { download, get, mutate, upload } from '../../api/client'
 import { Dialog } from '../../components/ui/Dialog'
 import { Button, Select } from '../../components/ui/Controls'
 import { ErrorMessage, Field } from '../../components/Form'
@@ -18,7 +18,7 @@ export function ExcelImportDialog({ supplierId, onClose, onImported }: { supplie
   async function run(action: () => Promise<void>) { setBusy(true); setError(null); try { await action() } catch (e) { setError(e) } finally { setBusy(false) } }
   async function historyLoad(p: number) { await run(async () => { setHistory(await get<Page<ImportHistory>>(`${base}/imports?page=${p}`)); setHistoryPage(p) }) }
   return <Dialog open onClose={onClose} title="Import supplier stock" description="Catalog information only. Warehouse stock is unchanged. First worksheet; header row first; values only." busy={busy} className="po-wide-dialog">
-    <ErrorMessage error={error} /><div className="po-toolbar"><a className="secondary" href={`${base}/template`} download>Download Excel template</a><Button variant="secondary" disabled={busy} onClick={() => void historyLoad(1)}>Import history</Button></div>
+    <ErrorMessage error={error} /><div className="po-toolbar"><Button variant="secondary" disabled={busy} onClick={() => void run(() => download(`${base}/template`, 'wros-supplier-stock-template.xlsx'))}>Download Excel template</Button><Button variant="secondary" disabled={busy} onClick={() => void historyLoad(1)}>Import history</Button></div>
     <Field label="Upload .xlsx (default limit 5 MB)"><input type="file" accept=".xlsx" disabled={busy} onChange={e => { const file = e.target.files?.[0]; if (file) void run(async () => { const value = await upload<ImportPreview>(`${base}/imports`, file); setPreview(value); setMapping(value.mapping); setPage(1); setHistory(null) }); e.target.value = '' }} /></Field>
     {history && <section><h3>Import history · UTC</h3><div className="po-scroll"><table className="po-table"><thead><tr><th>File / user</th><th>Uploaded</th><th>Rows</th><th>Status</th></tr></thead><tbody>{history.items.map(h => <tr key={h.id}><td>{h.fileName}<small>{h.createdBy}</small></td><td>{new Date(h.createdAt).toISOString()}</td><td>{h.rowCount}</td><td>{h.confirmedAt ? 'Confirmed' : 'Preview only'}</td></tr>)}</tbody></table></div><Pagination page={historyPage} total={history.total} noun="imports" disabled={busy} onPage={p => void historyLoad(p)} /></section>}
     {preview && <><h3 className="mt-4">{preview.fileName}</h3><div className="po-mapping">{Object.entries(fields).map(([key, label]) => <Field key={key} label={label}><Select disabled={busy || preview.confirmed} value={mapping[key] ?? ''} onChange={e => setMapping(current => { const next = { ...current }; if (e.target.value === '') delete next[key]; else next[key] = Number(e.target.value); return next })}><option value="">Not mapped</option>{preview.headers.map((h, i) => <option key={i} value={i}>{i + 1}. {h}</option>)}</Select></Field>)}</div>
