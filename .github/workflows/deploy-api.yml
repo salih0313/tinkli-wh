@@ -88,6 +88,30 @@ jobs:
           }
           Write-Host 'FTP authentication and directory listing succeeded.'
 
+      - name: Take API offline and release IIS file locks
+        shell: pwsh
+        env:
+          FTP_SERVER: ${{ secrets.API_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.API_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.API_FTP_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $offlineFile = Join-Path $env:RUNNER_TEMP 'app_offline.htm'
+          Set-Content -Path $offlineFile -Encoding utf8 -Value '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>WROS maintenance</title></head><body><h1>WROS is being updated</h1><p>Please try again in a few minutes.</p></body></html>'
+          $remoteDirectory = $env:FTP_DEPLOY_DIR -replace '^\./', ''
+          curl.exe --fail --silent --show-error `
+            --connect-timeout 20 --max-time 60 `
+            --user "${env:FTP_USERNAME}:${env:FTP_PASSWORD}" `
+            --upload-file "$offlineFile" `
+            "ftp://${env:FTP_SERVER}:21/${remoteDirectory}app_offline.htm"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Could not take the API offline. Application upload will not run.'
+          }
+          # ANCM's default shutdownTimeLimit is 10 seconds. Allow extra time
+          # for shutdown and release of assemblies before touching application files.
+          Write-Host 'Maintenance page uploaded. Waiting 30 seconds for IIS to release files...'
+          Start-Sleep -Seconds 30
+
       - name: Deploy API
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
@@ -110,3 +134,29 @@ jobs:
             **/logs/**
             **/uploads/**
             **/keys/**
+
+      # Run only after a successful upload. Never restart a partially deployed API.
+      - name: Bring API online
+        shell: pwsh
+        env:
+          FTP_SERVER: ${{ secrets.API_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.API_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.API_FTP_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $remoteDirectory = $env:FTP_DEPLOY_DIR -replace '^\./', ''
+          curl.exe --fail --silent --show-error `
+            --connect-timeout 20 --max-time 60 `
+            --user "${env:FTP_USERNAME}:${env:FTP_PASSWORD}" `
+            --quote "DELE /${remoteDirectory}app_offline.htm" `
+            --list-only "ftp://${env:FTP_SERVER}:21/${remoteDirectory}"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Could not remove app_offline.htm. Rerun deployment or remove it manually after verifying the upload completed.'
+          }
+          Write-Host 'Maintenance file removed. IIS can start the updated API on the next request.'
+
+      - name: Report deployment failure or cancellation
+        if: ${{ failure() || cancelled() }}
+        shell: pwsh
+        run: |
+          'If app_offline.htm was uploaded, it is intentionally retained to prevent starting partially uploaded files. Rerun the complete deployment. Remove /api/app_offline.htm manually only after verifying or restoring a complete deployment.' >> $env:GITHUB_STEP_SUMMARY
