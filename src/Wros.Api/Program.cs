@@ -109,10 +109,23 @@ app.UseAuthorization();
 app.Use(IdentityRegistration.UseSessionGuards);
 if (app.Environment.IsDevelopment())
 {
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+            Path.Combine(AppContext.BaseDirectory, "BrandingAssets")),
+        RequestPath = "/branding"
+    });
     app.MapOpenApi().AllowAnonymous();
     app.MapSwaggerUI("swagger", options =>
     {
-        options.DocumentTitle = "WROS API";
+        options.DocumentTitle = "Tinkli · WROS API";
+        options.HeadContent = """
+            <link rel="icon" type="image/png" href="../branding/fav/favicon-32x32.png" />
+            <link rel="shortcut icon" href="../branding/fav/favicon.ico" />
+            <link rel="apple-touch-icon" href="../branding/fav/apple-touch-icon.png" />
+            <meta name="theme-color" content="#6147a6" />
+            <link rel="stylesheet" href="../branding/swagger.css" />
+            """;
         options.SwaggerEndpoint("../openapi/v1.json", "WROS API v1");
         options.EnableFilter();
         options.DisplayRequestDuration();

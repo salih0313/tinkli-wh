@@ -11,7 +11,7 @@ import { masterReaders } from '../../features/master-data/types'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 export function Brand({ compact = false }: { compact?: boolean }) {
-  return <span className="brand"><span className="brand-mark"><Icon name="warehouse" width="23" height="23" /></span>{!compact && <span><strong>WROS<span className="brand-dot">.</span></strong><small>Warehouse operations</small></span>}</span>
+  return <span className="brand"><img className={`brand-logo${compact ? ' compact' : ''}`} src={compact ? '/branding/logo/logo_charactor.png' : '/branding/logo/logo_full.png'} alt={compact ? 'Tinkli' : 'Tinkli Kids Planet'} />{!compact && <span className="brand-caption">Warehouse operations · WROS</span>}</span>
 }
 const pageNames: Record<string, string> = { '/inventory-overview':'Inventory overview','/inventory':'Inventory explorer','/expiry':'Expiry alerts','/stock-movements':'Stock movements','/supplier-returns':'Supplier returns','/disposals':'Damage & disposal','/transfers':'Warehouse transfers','/integration':'E-commerce integration', '/delivery-notes': 'Delivery notes', '/receipt-stock': 'Receipt stock', '/purchase-orders': 'Purchase orders', '/suppliers': 'Suppliers', '/products': 'Products', '/warehouses': 'Warehouses', '/areas': 'Warehouse areas', '/racks': 'Storage racks', '/locations': 'Locations', '/': 'Overview', '/users': 'Users', '/roles': 'Roles & permissions', '/audit': 'Security audit', '/password': 'Account & password', '/system': 'System status' }
 export default function AppShell() {
