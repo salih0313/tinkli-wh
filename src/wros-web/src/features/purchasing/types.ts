@@ -1,5 +1,5 @@
 import type { PricingSnapshot, PricingSummary } from './catalog'
-export interface OrderLine { id?: string; productId: string; sku?: string; name?: string; quantity: number; supplierProductId?: string | null; pricing?: PricingSnapshot | null; originalLineId?: string; refreshPrice?: boolean; catalogRowVersion?: string }
+export interface OrderLine { id?: string; productId: string | null; sku?: string; name?: string; quantity: number; supplierProductId?: string | null; pricing?: PricingSnapshot | null; originalLineId?: string; refreshPrice?: boolean; catalogRowVersion?: string }
 export interface PurchaseOrder {
   id: string; number: string; supplierId: string; supplierCode: string; supplierName: string;
   orderDate: string; expectedDeliveryDate: string | null; remarks: string | null;

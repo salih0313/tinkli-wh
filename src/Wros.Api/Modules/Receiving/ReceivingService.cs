@@ -35,9 +35,7 @@ public sealed partial class ReceivingService(WrosDbContext db, AuditService audi
                 ?? throw new ApiProblemException(400, "Purchase order not found.");
             if (po.SupplierId != supplier.Id) throw new ApiProblemException(400, "The supplier must match the linked purchase order.");
         }
-        var productIds = request.Lines.Select(x => x.ProductId).Distinct().ToArray();
-        var products = await db.Products.Where(x => productIds.Contains(x.Id) && x.IsActive).ToDictionaryAsync(x => x.Id);
-        if (products.Count != productIds.Length) throw new ApiProblemException(400, "Choose active products for every receipt line.");
+        var lines = await ResolveReceiptProducts(supplier.Id, request.Lines);
         await ValidatePlacements(request.Lines.SelectMany(x => x.Lots).SelectMany(x => x.Allocations));
         if (id.HasValue)
         {
@@ -50,13 +48,13 @@ public sealed partial class ReceivingService(WrosDbContext db, AuditService audi
         note.Supplier = supplier; note.SupplierId = supplier.Id; note.PurchaseOrder = po; note.PurchaseOrderId = po?.Id;
         note.SupplierReference = OperationRules.Optional(request.SupplierReference, 100, "Supplier delivery reference");
         note.ReceivedAt = request.ReceivedAt.ToUniversalTime(); note.Remarks = OperationRules.Optional(request.Remarks, 2000, "Remarks"); Touch(note);
-        foreach (var (line, index) in request.Lines.Select((value, index) => (value, index)))
+        foreach (var (line, index) in lines.Select((value, index) => (value, index)))
         {
-            var entity = new DeliveryNoteLine { DeliveryNoteId = note.Id, ProductId = line.ProductId, Quantity = line.Quantity, Position = index };
+            var entity = new DeliveryNoteLine { DeliveryNoteId = note.Id, ProductId = line.ProductId!.Value, Quantity = line.Quantity, Position = index };
             note.Lines.Add(entity); db.DeliveryNoteLines.Add(entity);
             foreach (var lot in line.Lots)
             {
-                var group = new StockLot { DeliveryNoteLineId = entity.Id, ProductId = line.ProductId, Quantity = lot.Quantity,
+                var group = new StockLot { DeliveryNoteLineId = entity.Id, ProductId = line.ProductId!.Value, Quantity = lot.Quantity,
                     SupplierBatch = OperationRules.Optional(lot.SupplierBatch, 100, "Supplier batch"), Expiry = lot.Expiry, ReceivedAt = note.ReceivedAt };
                 entity.Lots.Add(group); db.StockLots.Add(group);
                 foreach (var a in lot.Allocations) { var allocation = new DeliveryNoteAllocation { StockLotId = group.Id, RackId = a.RackId, LocationId = a.LocationId, Quantity = a.Quantity }; group.Allocations.Add(allocation); db.DeliveryNoteAllocations.Add(allocation); }

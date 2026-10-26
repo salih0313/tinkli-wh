@@ -1,5 +1,7 @@
 # Supplier import: optional prices and sequence numbers
 
+> Updated workflow: PO product mapping is no longer required. Receiving automatically matches by product code or creates an internal product on DN draft save. Earlier Map-button/mapping acceptance steps below are superseded by [the current workflow and checks](purchase-order-without-mapping-manual-checks.md).
+
 Only code and name are required for imported and manually saved supplier catalog products. Other spreadsheet fields may be blank. Supplied numbers must still be valid; prices use up to three decimal places and quantities are non-negative whole units. Missing prices persist as NULL, distinct from an explicit zero. Missing supplier quantity remains NULL. Required PO quantities are entered by the user before saving.
 
 ## Files changed

@@ -11,7 +11,7 @@ export interface Receipt extends ReceiptSummary {
 export interface Balance { id: string; deliveryNoteId: string; deliveryNoteNumber: string; productId: string; sku: string; product: string; stockLotId: string; supplierBatch: string | null; expiry: string | null; receivedAt: string; warehouseId: string; warehouse: string; rackId: string; locationId: string | null; path: string; quantity: number; sellableQuantity: number }
 export interface Movement { id: string; stockLotId: string; warehouseId: string; rackId: string; locationId: string | null; type: string; quantity: number; timestamp: string; actorId: string | null; correlationId: string; correctionId: string | null }
 export interface DraftLot { supplierBatch: string; expiry: string; quantity: number; allocations: Allocation[] }
-export interface DraftLine { productId: string; quantity: number; lots: DraftLot[] }
+export interface DraftLine { productId: string; supplierProductId?: string | null; supplierCode?: string; supplierName?: string; quantity: number; lots: DraftLot[] }
 export interface ReceiptOrderLookup { id: string; number: string; supplierName: string; status: string }
 export function localDateTime(value: string) { const date = new Date(value); return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16) }
 export function emptyLot(quantity = 0): DraftLot { return { supplierBatch: '', expiry: '', quantity, allocations: [] } }

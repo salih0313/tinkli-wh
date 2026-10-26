@@ -338,17 +338,17 @@ function TransactionForm({
                 onChange={(e) => setRemarks(e.target.value)}
               />
             </Field>
-            <Field label="Original posted DN ID (optional)">
+            <Field label="Original posted DN ID (optional)" width="wide">
               <Input
                 value={receipt}
                 onChange={(e) => setReceipt(e.target.value)}
               />
             </Field>
-            <Field label="Original PO ID (optional)">
+            <Field label="Original PO ID (optional)" width="wide">
               <Input value={po} onChange={(e) => setPo(e.target.value)} />
             </Field>
           </div>
-          <Field label="Find source stock (SKU, name, barcode or brand)">
+          <Field label="Find source stock (SKU, name, barcode or brand)" width="wide">
             <Input
               value={search}
               onChange={(e) => {
@@ -415,7 +415,7 @@ function TransactionForm({
                     />
                   </Field>
                   {kind === 'Transfer' && (
-                    <Field label="Destination in another warehouse">
+                    <Field label="Destination in another warehouse" width="wide">
                       <Select
                         required
                         value={l.destination}

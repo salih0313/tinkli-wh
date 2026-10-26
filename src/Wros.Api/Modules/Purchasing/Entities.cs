@@ -20,8 +20,8 @@ public sealed class PurchaseOrderLine
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid PurchaseOrderId { get; set; }
-    public Guid ProductId { get; set; }
-    public Product Product { get; set; } = null!;
+    public Guid? ProductId { get; set; }
+    public Product? Product { get; set; }
     public Guid? SupplierProductId { get; set; }
     public string? PricingJson { get; set; }
     public int Position { get; set; }

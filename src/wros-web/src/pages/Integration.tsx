@@ -354,7 +354,7 @@ export default function Integration() {
                       ))}
                     </Select>
                   </Field>
-                  <Field label="External product ID">
+                  <Field label="External product ID" width="wide">
                     <Input
                       required
                       maxLength={100}
@@ -367,7 +367,7 @@ export default function Integration() {
                       }
                     />
                   </Field>
-                  <Field label="Stable WROS product ID">
+                  <Field label="Stable WROS product ID" width="wide">
                     <Input
                       required
                       value={mapping.productId}

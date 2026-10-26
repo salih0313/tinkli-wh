@@ -1,5 +1,7 @@
 # Repeated supplier availability lists
 
+> Updated workflow: PO product mapping is no longer required. Receiving automatically matches by product code or creates an internal product on DN draft save. Earlier Map-button/mapping acceptance steps below are superseded by [the current workflow and checks](purchase-order-without-mapping-manual-checks.md).
+
 Supplier lists may repeat exactly, including identical file contents. Every upload creates its own preview/history entry containing that workbook’s rows. Confirmation updates the supplier catalog by supplier ID plus product code. Existing WROS product mappings remain intact; no display-name matching occurs. Duplicate codes within a single workbook still require correction to avoid ambiguous updates. Confirmation retries for the same import ID return the frozen prior result without applying it again.
 
 The PO working list supports removal, quantity edits, manual additions and additions from the existing supplier catalog. Unmapped active catalog items may now be selected and mapped before saving, consistently with imported items. Confirming a repeat import in the same PO refreshes matching rows from that confirmed upload, retaining requested quantities and avoiding duplicate PO rows. Other working rows stay accessible through All PO products. Existing saved orders are unchanged unless explicitly edited or refreshed.

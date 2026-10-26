@@ -15,7 +15,10 @@ public static class PurchasingConfiguration
         line.HasIndex(x => new { x.PurchaseOrderId, x.Position }).IsUnique();
         line.HasOne<SupplierCatalog.SupplierProduct>().WithMany().HasForeignKey(x => x.SupplierProductId).OnDelete(DeleteBehavior.Restrict);
         line.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
-        line.ToTable(t => t.HasCheckConstraint("CK_PurchaseOrderLine_Quantity", "[Quantity]>0"));
+        line.ToTable(t => {
+            t.HasCheckConstraint("CK_PurchaseOrderLine_Quantity", "[Quantity]>0");
+            t.HasCheckConstraint("CK_PurchaseOrderLine_Identity", "[ProductId] IS NOT NULL OR ([SupplierProductId] IS NOT NULL AND [PricingJson] IS NOT NULL)");
+        });
         var revision = model.Entity<PurchaseOrderRevision>(); revision.HasKey(x => x.Id);
         revision.HasIndex(x => new { x.PurchaseOrderId, x.Revision }).IsUnique(); revision.Property(x => x.Timestamp).HasPrecision(3);
     }

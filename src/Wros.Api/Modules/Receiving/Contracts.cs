@@ -3,7 +3,7 @@ namespace Wros.Api.Modules.Receiving;
 public sealed record AllocationRequest(Guid RackId, Guid? LocationId, decimal Quantity);
 public sealed record LotRequest([MaxLength(100)] string? SupplierBatch, DateOnly? Expiry, decimal Quantity,
     [Required, MaxLength(500)] AllocationRequest[] Allocations);
-public sealed record ReceiptLineRequest(Guid ProductId, decimal Quantity, [Required, MaxLength(100)] LotRequest[] Lots);
+public sealed record ReceiptLineRequest(Guid? ProductId, decimal Quantity, [Required, MaxLength(100)] LotRequest[] Lots, Guid? SupplierProductId = null);
 public sealed record ReceiptRequest(Guid SupplierId, Guid? PurchaseOrderId, [MaxLength(100)] string? SupplierReference,
     DateTimeOffset ReceivedAt, [MaxLength(2000)] string? Remarks, [Required, MaxLength(500)] ReceiptLineRequest[] Lines, string? RowVersion);
 public sealed record LotCorrection(Guid StockLotId, [Required, MaxLength(500)] AllocationRequest[] Allocations);

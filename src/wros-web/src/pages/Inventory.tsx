@@ -66,7 +66,7 @@ export default function Inventory({
       />
       <section className="panel p-3">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="SKU, name, barcode or brand">
+          <Field label="SKU, name, barcode or brand" width="wide">
             <Input
               value={search}
               onChange={(e) => {
@@ -188,7 +188,7 @@ export default function Inventory({
                   ))}
               </Select>
             </Field>
-            <Field label="Lot ID">
+            <Field label="Lot ID" width="wide">
               <Input
                 placeholder="UUID (optional)"
                 value={filters.lotId ?? ''}

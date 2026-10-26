@@ -39,9 +39,9 @@ public sealed class PurchaseOrderService(WrosDbContext db, AuditService audit, D
         var order = id.HasValue ? await Query().SingleOrDefaultAsync(x => x.Id == id) ?? throw new ApiProblemException(404, "Purchase order not found.") : new PurchaseOrder();
         if (id.HasValue) { OperationRules.CheckVersion(order, request.RowVersion); EnsureEditable(order); }
         var supplier = await db.Suppliers.SingleOrDefaultAsync(x => x.Id == request.SupplierId && x.IsActive) ?? throw new ApiProblemException(400, "Choose an active supplier.");
-        var productIds = request.Lines.Select(x => x.ProductId).Distinct().ToArray();
+        var productIds = request.Lines.Where(x => !x.SupplierProductId.HasValue && x.ProductId.HasValue).Select(x => x.ProductId!.Value).Distinct().ToArray();
         var products = await db.Products.Where(x => productIds.Contains(x.Id) && x.IsActive).ToDictionaryAsync(x => x.Id);
-        if (products.Count != productIds.Length) throw new ApiProblemException(400, "Choose active products for all lines.");
+        if (products.Count != productIds.Length) throw new ApiProblemException(400, "Any supplied WROS product must be active.");
         var original = order.Lines.ToDictionary(x => x.Id);
         var catalogIds = request.Lines.Where(x => x.SupplierProductId.HasValue).Select(x => x.SupplierProductId!.Value).Distinct().ToArray();
         if (request.Lines.Where(x => x.SupplierProductId.HasValue).GroupBy(x => x.SupplierProductId).Any(x => x.Count() > 1)) throw new ApiProblemException(400, "A supplier product may appear only once in a PO.");
@@ -49,26 +49,25 @@ public sealed class PurchaseOrderService(WrosDbContext db, AuditService audit, D
         var catalog = await db.SupplierProducts.Where(x => catalogIds.Contains(x.Id) && x.SupplierId == supplier.Id).ToDictionaryAsync(x => x.Id);
         var prepared = request.Lines.Select((line, position) =>
         {
-            var next = new PurchaseOrderLine { PurchaseOrderId = order.Id, ProductId = line.ProductId, Product = products[line.ProductId], Quantity = line.Quantity, Position = position, SupplierProductId = line.SupplierProductId };
+            var next = new PurchaseOrderLine { PurchaseOrderId = order.Id, ProductId = line.SupplierProductId.HasValue ? null : line.ProductId, Product = !line.SupplierProductId.HasValue && line.ProductId.HasValue ? products[line.ProductId.Value] : null, Quantity = line.Quantity, Position = position, SupplierProductId = line.SupplierProductId };
             PurchaseOrderLine? old = null;
             if (line.OriginalLineId.HasValue && !original.TryGetValue(line.OriginalLineId.Value, out old)) throw new ApiProblemException(400, "Original line does not belong to this purchase order.");
             if (line.SupplierProductId.HasValue)
             {
-                if (!catalog.TryGetValue(line.SupplierProductId.Value, out var item)) throw new ApiProblemException(400, "Choose an active supplier product explicitly mapped to the selected WROS product.");
-                if (!line.RefreshPrice && old?.PricingJson is not null && old.SupplierProductId == item.Id && old.ProductId == line.ProductId && order.SupplierId == supplier.Id)
+                if (!catalog.TryGetValue(line.SupplierProductId.Value, out var item) || !item.IsActive) throw new ApiProblemException(400, "Choose an active product from the selected supplier catalog.");
+                if (!line.RefreshPrice && old?.PricingJson is not null && old.SupplierProductId == item.Id && order.SupplierId == supplier.Id)
                 {
                     var saved = JsonSerializer.Deserialize<PricingSnapshot>(old.PricingJson)!;
                     next.PricingJson = JsonSerializer.Serialize(saved with { Quantity = line.Quantity, GrossAmount = PurchasePricing.Money(saved.SupplierPrice * line.Quantity), DiscountAmount = PurchasePricing.Money((saved.SupplierPrice - saved.NetUnitPrice) * line.Quantity), LineTotal = PurchasePricing.Money(saved.NetUnitPrice * line.Quantity) });
                 }
                 else
                 {
-                    if (item.ProductId != line.ProductId || !item.IsActive) throw new ApiProblemException(400, "Choose an active supplier product explicitly mapped to the selected WROS product.");
                     OperationRules.CheckVersion(item, line.CatalogRowVersion);
                     next.PricingJson = JsonSerializer.Serialize(PurchasePricing.Snapshot(item, line.Quantity));
                 }
             }
             else if (old is not null && (old.SupplierProductId.HasValue || old.ProductId != line.ProductId)) throw new ApiProblemException(400, "An existing supplier pricing snapshot cannot be removed or reassigned.");
-            else if (old is null) throw new ApiProblemException(400, "New PO lines require a mapped supplier catalog product.");
+            else if (old is null) throw new ApiProblemException(400, "New PO lines require a supplier catalog product.");
             return next;
         }).ToList();
         if (id.HasValue)
@@ -91,7 +90,9 @@ public sealed class PurchaseOrderService(WrosDbContext db, AuditService audit, D
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
         var order = await Query().SingleOrDefaultAsync(x => x.Id == id) ?? throw new ApiProblemException(404, "Purchase order not found.");
         OperationRules.CheckVersion(order, request.RowVersion); EnsureEditable(order);
-        if (!order.Supplier.IsActive || order.Lines.Any(x => !x.Product.IsActive)) throw new ApiProblemException(400, "Supplier and products must be active before recording a send.");
+        if (!order.Supplier.IsActive || order.Lines.Any(x => x.Product is { IsActive: false })) throw new ApiProblemException(400, "Supplier and products must be active before recording a send.");
+        var catalogIds = order.Lines.Where(x => x.SupplierProductId.HasValue).Select(x => x.SupplierProductId!.Value).ToArray();
+        if (await db.SupplierProducts.AnyAsync(x => catalogIds.Contains(x.Id) && !x.IsActive)) throw new ApiProblemException(400, "Supplier catalog products must be active before recording a send.");
         var action = order.Status == "Draft" ? "Sent" : "Resent";
         order.Status = "Sent"; order.UpdatedAt = DateTimeOffset.UtcNow; order.UpdatedBy = audit.ActorId;
         Snapshot(order, action); await db.SaveChangesAsync(); await tx.CommitAsync(); return ToDto(order);
@@ -116,7 +117,7 @@ public sealed class PurchaseOrderService(WrosDbContext db, AuditService audit, D
         // Safe business document snapshot, with product identifiers/labels at this revision. No supplier contact PII.
         var revision = new PurchaseOrderRevision { PurchaseOrderId = order.Id, Revision = order.Revision, Action = action, ActorId = audit.ActorId,
             Snapshot = JsonSerializer.Serialize(new { order.Number, order.SupplierId, Supplier = order.Supplier.Name, order.OrderDate, order.ExpectedDeliveryDate,
-                order.Remarks, order.Status, Lines = order.Lines.OrderBy(x => x.Position).Select(x => new { x.ProductId, Sku = x.Product.Code, Name = x.Product.Name, x.Quantity, Pricing = ReadPricing(x) }) }) };
+                order.Remarks, order.Status, Lines = order.Lines.OrderBy(x => x.Position).Select(x => new { x.ProductId, Sku = ReadPricing(x)?.SupplierProductCode ?? x.Product?.Code, Name = ReadPricing(x)?.ProductName ?? x.Product?.Name, x.Quantity, Pricing = ReadPricing(x) }) }) };
         db.PurchaseOrderRevisions.Add(revision);
         audit.Record($"PurchaseOrder{action}", "PurchaseOrder", order.Id.ToString(), newValues: new { order.Number, order.Status, order.Revision });
     }
@@ -138,5 +139,5 @@ public sealed class PurchaseOrderService(WrosDbContext db, AuditService audit, D
     private IQueryable<PurchaseOrder> Query() => db.PurchaseOrders.Include(x => x.Supplier).Include(x => x.Lines).ThenInclude(x => x.Product).AsSplitQuery();
     private static OrderDto ToDto(PurchaseOrder x) => new(x.Id, x.Number, x.SupplierId, x.Supplier.Code, x.Supplier.Name,
         x.OrderDate, x.ExpectedDeliveryDate, x.Remarks, x.Status, x.Revision, Convert.ToBase64String(x.RowVersion), x.CreatedAt, x.UpdatedAt, x.CreatedBy, x.UpdatedBy,
-        x.Lines.OrderBy(l => l.Position).Select(l => new OrderLineDto(l.Id, l.ProductId, ReadPricing(l)?.SupplierProductCode ?? l.Product.Code, ReadPricing(l)?.ProductName ?? l.Product.Name, l.Quantity, l.SupplierProductId, ReadPricing(l))).ToArray(), Summary(x));
+        x.Lines.OrderBy(l => l.Position).Select(l => new OrderLineDto(l.Id, l.ProductId, ReadPricing(l)?.SupplierProductCode ?? l.Product?.Code ?? "", ReadPricing(l)?.ProductName ?? l.Product?.Name ?? "", l.Quantity, l.SupplierProductId, ReadPricing(l))).ToArray(), Summary(x));
 }

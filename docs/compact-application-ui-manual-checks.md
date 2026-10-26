@@ -1,5 +1,7 @@
 # Compact application UI
 
+> Updated workflow: PO product mapping is no longer required. Receiving automatically matches by product code or creates an internal product on DN draft save. Earlier Map-button/mapping acceptance steps below are superseded by [the current workflow and checks](purchase-order-without-mapping-manual-checks.md).
+
 The purchase order editor is the density reference for all screens. Shared desktop inputs and buttons use 34px minimum height, 13px input text, 12px labels, 4px label gaps, and smaller padding. Table rows, cards, dialogs, document facts and page headers use tighter spacing. Tables size columns from their content rather than assigning 28% to every first column. PO working-list column widths remain explicit. Save bars retain the requested lavender background, purple 1px border and 5px radius.
 
 Phone inputs use 16px text to keep entry readable and avoid focus zoom. Touch controls remain at least 44px tall, including PO quantity fields, mapping actions, warehouse tree actions and password visibility controls. Mobile table cards and horizontal table scrolling remain available.
@@ -45,3 +47,35 @@ Production frontend validation: `npm run build` from src/wros-web. Deployment re
 ## Validation and limitations
 
 TypeScript/Vite production build and whitespace checks passed. No automated tests or frameworks were added. Browser appearance, touch-device behavior and authenticated workflows remain for owner verification; build success does not validate those visually. Existing business rules, API contracts and print-specific table rules were not changed. Please verify and approve this styling update.
+
+
+## Meaningful field widths
+
+Follow-up files: components/Form.tsx and styles.css provide shared content-based widths; pages/{Integration,Inventory,StockTransactions,StockMovements}.tsx explicitly give identifiers and compound searches more room.
+
+- Date: 164px, matching PO creation; date/time: 240px.
+- Quantities/prices: 160px outside specialized table rows.
+- Short codes, brand and batch fields (maximum length up to 100): 220px.
+- Standard names, selects and credentials: 360px, with standard fields able to grow to 440px in shared form rows.
+- Remarks, file uploads, long identifiers and explicitly wide searches: available width.
+
+All widths respect their container. Shared form rows wrap according to field sizes; date fields stay grouped on the PO. Input heights and mobile/touch rules are retained. No schema, seed or configuration changes.
+
+1. Check PO dates, delivery-note received date/time, and lot expiry: expect readable native pickers at compact widths rather than half-page controls. Select values and reopen the form to verify normal entry.
+2. Check catalog prices/quantity, receipt units/lots, supplier batch, product code/name, and warehouse code/name: expect shorter numeric/code fields and roomier name fields. Try a large supported quantity and three-decimal price.
+3. Check Inventory lot IDs, Integration WROS/external IDs and stock-out original document IDs: expect enough room for long values. Search fields and remarks keep room for longer text.
+4. At 320px/390px phone widths, tablet width and 200% browser zoom, expect wrapping within the container, no clipped date calendar button, and usable touch input. Check PO dates together and receiving lots wrapping naturally.
+5. Verify labels, hints, required validation and keyboard tab order still work in create/edit dialogs and receiving forms. No data validation or business rules changed.
+
+Production build and whitespace checks pass; browser and native date-picker appearance require owner verification.
+
+
+## Date-row alignment correction
+
+Changed styles.css to reserve a two-column 340px date group (164px per date plus a 12px gap), keeping both dates on the same row beside Supplier when the panel has at least 600px available. On narrower panels the date group wraps together, preserving two usable date columns. At phone widths it fits the available width. Removed percentage-based intrinsic field sizing that allowed the nested group to collapse. Standard/wide fields in explicit responsive grids fill their allocated column; codes, numbers and dates retain meaningful limits.
+
+1. Open PO creation on a wide desktop and confirm Supplier, PO date and Expected delivery date all align on one row. Expect no blank area above Supplier and no vertically stacked dates.
+2. Resize to tablet and phone widths. Expect the date pair to stay side by side, moving together below Supplier only when there is insufficient space. Calendar buttons must remain visible.
+3. Open Inventory filters, stock movement filters, receiving forms and master-data dialogs. Expect names/searches/selects to use available grid columns and short codes/quantities/dates to retain compact widths. Check wrapped labels and long values.
+
+No configuration, seed or migration change. Run `npm run dev` or `npm run build` from src/wros-web. Frontend build and whitespace checks pass; live appearance still needs owner review.

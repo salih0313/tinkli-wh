@@ -564,13 +564,11 @@ textarea:focus { outline: 3px solid #957bcf; outline-offset: 3px; }
 .po-error-toast .button.secondary { margin-top:10px; }
 .po-order-fields { display:flex;flex-wrap:wrap;align-items:end;gap:12px 20px; }
 .po-order-fields > .field { flex:1 1 240px;max-width:440px; }
-.po-date-fields { display:flex;flex-wrap:wrap;gap:12px; }
-.po-editor .po-date-fields input[type=date] { width:164px; }
+/* Reserve both date columns together so intrinsic field widths cannot stack them. */
+.po-date-fields { display:grid;grid-template-columns:repeat(2,minmax(0,164px));align-items:end;gap:12px;flex:0 0 340px;max-width:100%; }
 @media(max-width:479px) {
   .po-error-toast { right:16px;bottom:88px; }
-  .po-date-fields { width:100%;gap:8px; }
-  .po-date-fields > .field { flex:1;min-width:0; }
-  .po-editor .po-date-fields input[type=date] { width:100%; }
+  .po-date-fields { grid-template-columns:repeat(2,minmax(0,1fr));width:100%;flex-basis:100%;gap:8px; }
 }
 
 /* Compact desktop controls; retain readable phone inputs and warehouse touch targets. */
@@ -588,3 +586,25 @@ textarea:focus { outline: 3px solid #957bcf; outline-offset: 3px; }
   .password-control input { padding-right:52px; }
   .password-control .icon-button { top:0; }
 }
+
+/* Field lengths reflect their contents rather than stretching every control across a column. */
+.field[data-field-size] { --field-width:360px;width:100%;max-width:min(100%,var(--field-width));min-width:0; }
+.po-order-fields > .field[data-field-size] { max-width:440px; }
+.field[data-field-size=short] { --field-width:220px; }
+.field[data-field-size=date] { --field-width:164px; }
+.field[data-field-size=datetime] { --field-width:240px; }
+.field[data-field-size=number] { --field-width:160px; }
+.field[data-field-size=wide] { --field-width:100%; }
+.field[data-field-size] > :is(input,select,textarea,.password-control) { max-width:100%; }
+.form-grid:has(> .field) { display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px 12px; }
+.form-grid > .field[data-field-size] { flex:0 1 var(--field-width); }
+.form-grid > .field[data-field-size=standard] { flex:1 1 260px;max-width:440px; }
+.form-grid > .field[data-field-size=wide] { flex:1 1 320px; }
+@media(max-width:479px) {
+  .form-grid > .field[data-field-size=standard], .form-grid > .field[data-field-size=wide] { flex-basis:100%; }
+  .po-date-fields .field[data-field-size=date] { width:100%;max-width:100%; }
+}
+
+/* Grid columns already define usable space for names, selections and searches. */
+.grid > .field[data-field-size=standard], .grid > .field[data-field-size=wide] { max-width:100%; }
+.po-date-fields > .field[data-field-size=date] { width:100%; }

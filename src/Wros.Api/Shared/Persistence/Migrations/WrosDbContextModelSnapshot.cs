@@ -954,7 +954,7 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.Property<string>("PricingJson")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("ProductId")
+                    b.Property<Guid?>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("PurchaseOrderId")
@@ -979,6 +979,7 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.ToTable("PurchaseOrderLines", t =>
                         {
                             t.HasCheckConstraint("CK_PurchaseOrderLine_Quantity", "[Quantity]>0");
+                            t.HasCheckConstraint("CK_PurchaseOrderLine_Identity", "[ProductId] IS NOT NULL OR ([SupplierProductId] IS NOT NULL AND [PricingJson] IS NOT NULL)");
                         });
                 });
 
@@ -2004,8 +2005,7 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.HasOne("Wros.Api.Modules.Catalog.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Wros.Api.Modules.Purchasing.PurchaseOrder", null)
                         .WithMany("Lines")

@@ -1,5 +1,7 @@
 # Phase 3.1 — Supplier stock import and PO preparation
 
+> Updated workflow: PO product mapping is no longer required. Receiving automatically matches by product code or creates an internal product on DN draft save. Earlier Map-button/mapping acceptance steps below are superseded by [the current workflow and checks](purchase-order-without-mapping-manual-checks.md).
+
 Implementation/build verification is separate from acceptance. **The owner must run these checks; manual testing has not been claimed as passed.** Stop after this phase and obtain owner approval before further scope.
 
 ## Setup and commands (macOS / Windows PowerShell)

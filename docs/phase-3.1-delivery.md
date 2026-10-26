@@ -1,5 +1,7 @@
 # Phase 3.1 delivery
 
+> Updated workflow: PO product mapping is no longer required. Receiving automatically matches by product code or creates an internal product on DN draft save. Earlier Map-button/mapping acceptance steps below are superseded by [the current workflow and checks](purchase-order-without-mapping-manual-checks.md).
+
 Supplier availability files now feed a supplier-specific catalog and compact PO preparation workspace. Import does not access receiving, stock lots, balances or movement-writing services. POs retain numbering, send/resend revision history and the receiving lock; no emails or Delivery Notes are created automatically.
 
 ## Database changes

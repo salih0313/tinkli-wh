@@ -1,5 +1,7 @@
 # Compact purchase order editor
 
+> Updated workflow: PO product mapping is no longer required. Receiving automatically matches by product code or creates an internal product on DN draft save. Earlier Map-button/mapping acceptance steps below are superseded by [the current workflow and checks](purchase-order-without-mapping-manual-checks.md).
+
 Changed files: src/wros-web/src/pages/PurchaseOrderEditor.tsx and src/wros-web/src/styles.css. Changes are scoped to the purchase order editor: explicit narrow code column, flexible wider product name column, compact fields/toolbars/table rows, optional mapping help on the Map button, and an opaque lavender sticky save bar.
 
 Start the existing API and run `npm run dev` from src/wros-web. No configuration, migration or seed changes are required for this layout update.
