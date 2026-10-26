@@ -94,14 +94,14 @@ export default function Users() {
     <Pagination page={page} total={data?.total ?? 0} noun="users" disabled={busy || loading} onPage={setPage} />
     <Dialog open={!!selected} title={selected === 'new' ? 'Create staff account' : selected?.userName ?? 'Manage user'} description={selected === 'new' ? 'Give a team member secure access to the workspace.' : 'Update account access, assigned roles and security.'} busy={busy} onClose={() => { setSelected(null); setError(null) }}>
       <ErrorMessage error={error} />
-      {selected && <><form key={selected === 'new' ? 'new' : selected.id} className="space-y-5" onSubmit={save} aria-busy={busy}>
+      {selected && <><form key={selected === 'new' ? 'new' : selected.id} className="space-y-3" onSubmit={save} aria-busy={busy}>
         {selected === 'new' && <><Field label="Username" hint="3–64 characters. Letters, numbers and . _ @ + - are allowed."><input name="username" autoComplete="off" autoCapitalize="none" spellCheck={false} minLength={3} maxLength={64} pattern="[a-zA-Z0-9._@+\-]{3,64}" required autoFocus /></Field>
           <Field label="Temporary password"><PasswordInput name="password" autoComplete="new-password" minLength={8} required aria-describedby="password-policy" /></Field><PasswordHint /></>}
         <fieldset><legend className="form-section-title">Assigned roles</legend><div className="form-grid">{roles.map(role => <label key={role.id} className="check-label"><input type="checkbox" name="roles" value={role.name} defaultChecked={selected === 'new' ? role.name === 'WarehouseStaff' : selected.roles.includes(role.name)} />{humanize(role.name)}</label>)}</div></fieldset>
         {selected !== 'new' && <label className="check-label"><input type="checkbox" name="active" defaultChecked={selected.isActive} />Active account</label>}
         <div className="dialog-actions"><Button variant="secondary" disabled={busy} onClick={() => setSelected(null)}>Cancel</Button><Button type="submit" loading={busy}>{busy ? 'Saving…' : selected === 'new' ? 'Create account' : 'Save changes'}</Button></div>
       </form>
-      {selected !== 'new' && selected.id !== current?.id && <form className="security-section space-y-4" onSubmit={reset} aria-busy={busy}><div><h3>Reset password</h3><p className="field-hint">The user will need to change this temporary password at their next sign-in. Existing sessions will end.</p></div>
+      {selected !== 'new' && selected.id !== current?.id && <form className="security-section space-y-3" onSubmit={reset} aria-busy={busy}><div><h3>Reset password</h3><p className="field-hint">The user will need to change this temporary password at their next sign-in. Existing sessions will end.</p></div>
         <Field label="New temporary password"><PasswordInput name="newPassword" autoComplete="new-password" minLength={8} required /></Field>
         <p className="field-hint">Use at least 8 characters. Resetting does not reactivate an account or clear lockout.</p><Button variant="danger" type="submit" disabled={busy} icon="key">Reset password</Button>
       </form>}

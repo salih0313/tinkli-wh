@@ -134,7 +134,7 @@ export default function WarehouseHierarchy({ kind }: { kind: HierarchyKind }) {
     </section>}
     <Dialog open={!!editor} title={`${editor?.item ? canManage ? 'Edit' : 'View' : 'Add'} ${editor ? labels[editor.kind] : ''}`} description={editor?.parent ? `Inside ${editor.parent.code} · ${editor.parent.name}` : editor?.item?.parentPath ?? 'Changes are audited. Existing history is preserved.'} busy={busy} onClose={() => { setEditor(null); setError(null) }}>
       <ErrorMessage error={error} />
-      {editor && <form key={editor.item?.id ?? `${editor.kind}-${editor.parent?.id ?? 'new'}`} onSubmit={save} className="space-y-5"><fieldset disabled={busy || !canManage} className="space-y-5">
+      {editor && <form key={editor.item?.id ?? `${editor.kind}-${editor.parent?.id ?? 'new'}`} onSubmit={save} className="space-y-3"><fieldset disabled={busy || !canManage} className="space-y-3">
         {editorParentKind && !editor.parent && !editor.item && <Field label={labels[editorParentKind]}><Select name="parentId" required defaultValue=""><option value="">Choose {labels[editorParentKind]}</option>{parents.items.map(value => <option key={value.id} value={value.id}>{value.parentPath ? `${value.parentPath} / ` : ''}{value.code} · {value.name}{value.isActive ? '' : ' (inactive)'}</option>)}</Select></Field>}
         <div className="form-grid"><Field label="Code"><input name="code" required maxLength={64} defaultValue={editor.item?.code} autoFocus /></Field><Field label="Name"><input name="name" required maxLength={200} defaultValue={editor.item?.name} /></Field></div>
         <Field label="Description (optional)"><textarea name="description" maxLength={2000} defaultValue={editor.item?.description ?? ''} /></Field>

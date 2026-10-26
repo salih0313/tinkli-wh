@@ -18,7 +18,7 @@ public sealed class PurchaseOrderPrintService(IOptions<PurchaseOrderPrintOptions
     {
         var options = settings.Value;
         static string E(string? value) => WebUtility.HtmlEncode(value ?? "—");
-        static string M(decimal value) => value.ToString("N3", CultureInfo.InvariantCulture);
+        static string M(decimal? value) => value?.ToString("N3", CultureInfo.InvariantCulture) ?? "—";
         var html = new StringBuilder($$"""
             <!doctype html><html lang="en"><head><meta charset="utf-8"><title>{{E(order.Number)}}</title><style>
             @page { size:A4 portrait; margin:{{options.MarginMillimeters}}mm; }
@@ -45,7 +45,7 @@ public sealed class PurchaseOrderPrintService(IOptions<PurchaseOrderPrintOptions
         html.Append("</tbody></table>");
         if (order.Summary.UnpricedLines == 0)
             html.Append($"<section class='totals'><p><span>Gross total</span><span>{M(order.Summary.GrossAmount)}</span></p><p><span>Total discount</span><span>{M(order.Summary.DiscountAmount)}</span></p><p class='final'><span>Final net total (KWD)</span><span>{M(order.Summary.NetAmount)}</span></p></section>");
-        else html.Append("<p>This historical purchase order contains unpriced lines. A complete financial total is unavailable.</p>");
+        else html.Append("<p>This purchase order contains unpriced lines. A complete financial total is unavailable.</p>");
         html.Append($"<p class='remarks'>{E(order.Remarks)}</p><footer>{Branding(options.FooterAssetPath, "WROS · Supplier request. Actual receipt is recorded separately on delivery notes.")}</footer></body></html>");
         return html.ToString();
     }

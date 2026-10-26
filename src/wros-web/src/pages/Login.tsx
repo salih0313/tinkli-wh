@@ -32,7 +32,7 @@ export default function Login() {
     <section className="login-main" aria-labelledby="login-title"><div className="login-mobile-brand"><Brand /></div><div className="login-form-wrap">
       <span className="login-lock"><Icon name="lock" /></span><p className="eyebrow">Welcome to Tinkli kids planet Warehouse</p><h1 id="login-title">Sign in to your workspace</h1>
       <p className="login-intro">Enter your account details to get started.</p>
-      <form onSubmit={submit} className="space-y-5" aria-busy={busy}>
+      <form onSubmit={submit} className="space-y-3" aria-busy={busy}>
         <ErrorMessage error={error} />
         <Field label="Username"><input name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="Your username" required maxLength={256} /></Field>
         <Field label="Password"><PasswordInput name="password" autoComplete="current-password" placeholder="Enter your password" required /></Field>

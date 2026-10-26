@@ -22,7 +22,7 @@ export default function StockMovements() {
         title="Stock movements"
         detail="Immutable history. Negative quantities leave a location; positive quantities enter it. Paired transfer entries preserve company stock."
       />
-      <section className="panel grid gap-4 sm:grid-cols-2">
+      <section className="panel p-3 grid gap-3 sm:grid-cols-2">
         <Field label="Product, receipt or correlation ID">
           <Input
             value={search}

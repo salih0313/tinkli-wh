@@ -48,7 +48,6 @@ public sealed class SupplierCatalogService(WrosDbContext db, AuditService audit,
         using var memory = new MemoryStream();
         await file.CopyToAsync(memory); memory.Position = 0;
         var hash = Convert.ToHexString(SHA256.HashData(memory)); memory.Position = 0;
-        if (await db.SupplierStockImports.AnyAsync(x => x.SupplierId == supplierId && x.FileHash == hash && x.ConfirmedAt != null)) throw new ApiProblemException(409, "This file has already been imported for this supplier. See import history.");
         var sheet = XlsxFile.Read(memory, limits);
         var import = new SupplierStockImport { SupplierId = supplierId, FileHash = hash, FileName = Path.GetFileName(file.FileName)[..Math.Min(Path.GetFileName(file.FileName).Length, 255)], CreatedBy = audit.ActorId, UpdatedBy = audit.ActorId,
             HeadersJson = JsonSerializer.Serialize(sheet.Headers), MappingJson = JsonSerializer.Serialize(AutoMap(sheet.Headers)) };
@@ -76,7 +75,6 @@ public sealed class SupplierCatalogService(WrosDbContext db, AuditService audit,
             return import.Rows.OrderBy(x => x.RowNumber).Select(x => JsonSerializer.Deserialize<CatalogDto>(x.ResultJson!)!).ToArray();
         }
         Editable(import); OperationRules.CheckVersion(import, request.RowVersion); await Supplier(supplierId, true);
-        if (await db.SupplierStockImports.AnyAsync(x => x.SupplierId == supplierId && x.FileHash == import.FileHash && x.ConfirmedAt != null)) throw new ApiProblemException(409, "This file has already been confirmed.");
         var preview = await Preview(import);
         if (preview.InvalidRows != 0) throw new ApiProblemException(400, "Resolve every validation issue before confirming. No rows have been imported.");
         var codes = preview.Rows.Select(x => x.Product!.Code).ToArray();
@@ -131,7 +129,7 @@ public sealed class SupplierCatalogService(WrosDbContext db, AuditService audit,
             {
                 foreach (var field in mapping.Keys)
                     if (Read(row, field).StartsWith(XlsxFile.InvalidCellPrefix, StringComparison.Ordinal)) errors.Add($"{field}: {Read(row, field)[XlsxFile.InvalidCellPrefix.Length..]}");
-                foreach (var field in new[] { "Code", "Name", "SupplierPrice" }) if (!mapping.ContainsKey(field)) errors.Add($"Map required field {field}.");
+                foreach (var field in new[] { "Code", "Name" }) if (!mapping.ContainsKey(field)) errors.Add($"Map required field {field}.");
                 if (headers.Any(h => Normalize(h) is "suppliercode" or "vendorcode") && !mapping.ContainsKey("SupplierCode")) errors.Add("Map the supplier code column for validation.");
                 if (headers.Any(h => Normalize(h) is "suppliername" or "supplier" or "vendorname") && !mapping.ContainsKey("SupplierName")) errors.Add("Map the supplier name column for validation.");
                 // Recognizable supplier identity columns cannot be bypassed by mapping another column instead.
@@ -162,7 +160,7 @@ public sealed class SupplierCatalogService(WrosDbContext db, AuditService audit,
                 }
                 var type = typeText.ToLowerInvariant() switch { "" when dv.EndsWith('%') => "Percentage", "" or "none" => "None", "%" or "percent" or "percentage" => "Percentage", "fixed" or "amount" => "Fixed", _ => throw new ApiProblemException(400, "Ambiguous discount type. Use None, Percentage or Fixed.") };
                 if (dv.EndsWith('%') && type != "Percentage") errors.Add("Percentage value conflicts with discount type.");
-                product = Validate(new(Read(row, "Code"), Read(row, "Name"), Read(row, "Brand"), Read(row, "Barcode"), Number("Rsp", true), Number("SupplierPrice", false)!.Value, type, Number("DiscountValue", true) ?? 0, Number("AvailableQuantity", true), null, true, null));
+                product = Validate(new(Read(row, "Code"), Read(row, "Name"), Read(row, "Brand"), Read(row, "Barcode"), Number("Rsp", true), Number("SupplierPrice", true), type, Number("DiscountValue", true) ?? 0, Number("AvailableQuantity", true), null, true, null));
                 net = PurchasePricing.Calculate(product.SupplierPrice, product.DiscountType, product.DiscountValue).Net;
             }
             catch (ApiProblemException ex) { errors.Add(ex.Message); }

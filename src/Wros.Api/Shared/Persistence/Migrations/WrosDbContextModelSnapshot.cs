@@ -1068,7 +1068,7 @@ namespace Wros.Api.Shared.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<decimal>("NetUnitPrice")
+                    b.Property<decimal?>("NetUnitPrice")
                         .HasPrecision(18, 3)
                         .HasColumnType("decimal(18,3)");
 
@@ -1088,7 +1088,7 @@ namespace Wros.Api.Shared.Persistence.Migrations
                     b.Property<Guid>("SupplierId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("SupplierPrice")
+                    b.Property<decimal?>("SupplierPrice")
                         .HasPrecision(18, 3)
                         .HasColumnType("decimal(18,3)");
 
@@ -1170,9 +1170,7 @@ namespace Wros.Api.Shared.Persistence.Migrations
 
                     b.HasIndex("SupplierId", "CreatedAt");
 
-                    b.HasIndex("SupplierId", "FileHash")
-                        .IsUnique()
-                        .HasFilter("[ConfirmedAt] IS NOT NULL");
+                    b.HasIndex("SupplierId", "FileHash");
 
                     b.ToTable("SupplierStockImports");
                 });

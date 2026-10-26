@@ -8,6 +8,6 @@ export function EmptyState({ title, detail, icon = 'search', action }: { title: 
 export function LoadingSkeleton({ label = 'Loading…', rows = 3 }: { label?: string; rows?: number }) {
   return <div className="loading-state" role="status"><span className="sr-only">{label}</span><div aria-hidden="true">{Array.from({ length: rows }, (_, index) => <div key={index} className="skeleton-row"><span className="skeleton-avatar" /><div><span className="skeleton-line" /><span className="skeleton-line short" /></div></div>)}</div></div>
 }
-export function Toast({ children, onDismiss }: { children: ReactNode; onDismiss: () => void }) {
-  return <div className="toast notice success" role="status"><Icon name="check" /><div>{children}</div><IconButton label="Dismiss notification" icon="close" onClick={onDismiss} /></div>
+export function Toast({ children, onDismiss, tone = 'success' }: { children: ReactNode; onDismiss: () => void; tone?: 'success' | 'error' }) {
+  return <div className={`toast notice ${tone}`} role={tone === 'error' ? 'alert' : 'status'}><Icon name={tone === 'error' ? 'alert' : 'check'} /><div>{children}</div><IconButton label="Dismiss notification" icon="close" onClick={onDismiss} /></div>
 }

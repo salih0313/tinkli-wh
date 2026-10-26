@@ -7,7 +7,7 @@ Supplier availability files now feed a supplier-specific catalog and compact PO 
 Additive migration `20261019062315_Phase31SupplierCatalogPricing` adds:
 
 - `SupplierProducts`: stable unique `(SupplierId, Code)`, optional explicit Product FK, decimal supplier/discount/net pricing, reference RSP and availability, latest import FK, active flag, actor/timestamps and row version.
-- `SupplierStockImports`: supplier FK, SHA-256, original filename, header/mapping metadata, timestamp/actor, confirmation state and row version. A filtered unique `(SupplierId, FileHash)` index prevents two confirmations of identical file bytes.
+- `SupplierStockImports`: supplier FK, SHA-256, original filename, header/mapping metadata, timestamp/actor, confirmation state and row version. A non-unique `(SupplierId, FileHash)` index retains traceability while allowing repeated supplier lists. Supplier + product code identifies catalog entries; repeat confirmation of one import ID returns the original result.
 - `SupplierStockImportRows`: original bounded cell data, row number, explicit catalog FK and frozen confirmation result; unique `(ImportId, RowNumber)`.
 - Nullable `PurchaseOrderLines.SupplierProductId` FK and `PricingJson`. The latter stores the saved full per-line pricing/identity snapshot with quantity and totals; existing revision JSON also includes that snapshot. Historical rows remain untouched with NULL pricing.
 

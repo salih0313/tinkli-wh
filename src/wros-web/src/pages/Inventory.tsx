@@ -64,8 +64,8 @@ export default function Inventory({
           </Button>
         }
       />
-      <section className="panel">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="panel p-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="SKU, name, barcode or brand">
             <Input
               value={search}
@@ -116,7 +116,7 @@ export default function Inventory({
           <summary className="cursor-pointer py-3">
             Filter by warehouse, area, rack or lot
           </summary>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Warehouse">
               <Select
                 value={filters.warehouseId ?? ''}

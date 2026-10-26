@@ -68,7 +68,7 @@ function MasterDataTable({ kind }: { kind: MasterKind }) {
     <Pagination page={page} total={data?.total ?? 0} noun={definition.title.toLowerCase()} disabled={loading} onPage={setPage} />
     <Dialog open={!!selected} title={`${selected === 'new' ? 'Create' : canManage ? 'Edit' : 'View'} ${definition.singular}`} description="Changes are audited. Deactivation preserves history." busy={busy} onClose={() => { setSelected(null); setError(null) }}>
       <ErrorMessage error={error} /><ErrorMessage error={definition.parent ? parentLookup.error : null} />
-      {selected && <form key={item?.id ?? 'new'} onSubmit={save} className="space-y-5" aria-busy={busy}><fieldset disabled={!canManage || busy} className="space-y-5">
+      {selected && <form key={item?.id ?? 'new'} onSubmit={save} className="space-y-3" aria-busy={busy}><fieldset disabled={!canManage || busy} className="space-y-3">
         {definition.parent && <Field label="Parent"><Select name="parentId" defaultValue={item?.parentId ?? parentId ?? ''} disabled={!!item || !!parentId} required><option value="">Choose {definition.parent}</option>{parentLookup.items.map(value => <option key={value.id} value={value.id}>{value.parentPath ? `${value.parentPath} / ` : ''}{value.code} · {value.name}{!value.isActive ? ' (inactive)' : ''}</option>)}</Select></Field>}
         <div className="form-grid"><Field label={kind === 'products' ? 'SKU' : 'Code'}><input name="code" maxLength={64} required defaultValue={item?.code} /></Field><Field label="Name"><input name="name" maxLength={200} required defaultValue={item?.name} /></Field></div>
         <Field label="Description"><input name="description" maxLength={2000} defaultValue={item?.description ?? ''} /></Field>

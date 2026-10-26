@@ -1,13 +1,13 @@
 export interface CatalogProduct {
   id: string; supplierId: string; code: string; productId: string | null; name: string;
-  brand: string | null; barcode: string | null; rsp: number | null; supplierPrice: number;
-  discountType: 'None' | 'Percentage' | 'Fixed'; discountValue: number; netUnitPrice: number;
+  brand: string | null; barcode: string | null; rsp: number | null; supplierPrice: number | null;
+  discountType: 'None' | 'Percentage' | 'Fixed'; discountValue: number; netUnitPrice: number | null;
   availableQuantity: number | null; latestImportId: string | null; isActive: boolean; updatedAt: string; rowVersion: string;
 }
 export interface PricingSnapshot {
   supplierProductId: string | null; supplierProductCode: string; productName: string; brand: string | null;
-  barcode: string | null; rsp: number | null; supplierPrice: number; discountType: string; discountValue: number;
-  netUnitPrice: number; quantity: number; grossAmount?: number; discountAmount?: number; lineTotal?: number; lineTotalText?: string;
+  barcode: string | null; rsp: number | null; supplierPrice: number | null; discountType: string; discountValue: number;
+  netUnitPrice: number | null; quantity: number; grossAmount?: number | null; discountAmount?: number | null; lineTotal?: number | null; lineTotalText?: string | null;
 }
 export interface PricingSummary { selectedProducts: number; totalQuantity: number; grossAmount: number; discountAmount: number; netAmount: number; unpricedLines: number; grossAmountText: string; discountAmountText: string; netAmountText: string; totalQuantityText: string }
 export interface ImportPreview {

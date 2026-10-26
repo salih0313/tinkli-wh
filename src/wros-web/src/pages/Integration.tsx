@@ -128,8 +128,8 @@ export default function Integration() {
       ) : (
         status.data && (
           <>
-            <section className="panel">
-              <h2 className="mb-3 text-xl font-semibold">
+            <section className="panel p-3">
+              <h2 className="mb-3 text-lg font-semibold">
                 Connection contract
               </h2>
               <p className="break-all">
@@ -172,8 +172,8 @@ export default function Integration() {
                 </p>
               </details>
             </section>
-            <section className="panel">
-              <h2 className="mb-4 text-xl font-semibold">Client registry</h2>
+            <section className="panel p-3">
+              <h2 className="mb-4 text-lg font-semibold">Client registry</h2>
               <DataTable
                 items={status.data.clients}
                 getKey={(c) => c.id}
@@ -216,13 +216,13 @@ export default function Integration() {
                 ]}
               />
               <form
-                className="mt-5 space-y-4"
+                className="mt-5 space-y-3"
                 onSubmit={(e) => {
                   e.preventDefault()
                   void saveClient()
                 }}
               >
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Client ID">
                     <Input
                       required
@@ -261,8 +261,8 @@ export default function Integration() {
                 </Button>
               </form>
             </section>
-            <section className="panel">
-              <h2 className="mb-4 text-xl font-semibold">
+            <section className="panel p-3">
+              <h2 className="mb-4 text-lg font-semibold">
                 Product identity mappings
               </h2>
               <p className="mb-4 field-hint">
@@ -331,13 +331,13 @@ export default function Integration() {
                 onPage={setPage}
               />
               <form
-                className="mt-5 space-y-4"
+                className="mt-5 space-y-3"
                 onSubmit={(e) => {
                   e.preventDefault()
                   void saveMapping()
                 }}
               >
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Client">
                     <Select
                       required
@@ -407,8 +407,8 @@ export default function Integration() {
                 </div>
               </form>
             </section>
-            <section className="panel">
-              <h2 className="mb-4 text-xl font-semibold">Recent deductions</h2>
+            <section className="panel p-3">
+              <h2 className="mb-4 text-lg font-semibold">Recent deductions</h2>
               <DataTable
                 items={status.data.recentDeductions}
                 getKey={(d) => d.id}
@@ -453,8 +453,8 @@ export default function Integration() {
                 onPage={setDeductionPage}
               />
             </section>
-            <section className="panel">
-              <h2 className="mb-4 text-xl font-semibold">Recent snapshots</h2>
+            <section className="panel p-3">
+              <h2 className="mb-4 text-lg font-semibold">Recent snapshots</h2>
               <DataTable
                 items={status.data.recentSnapshots}
                 getKey={(s) => s.id}

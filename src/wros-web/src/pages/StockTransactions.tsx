@@ -163,9 +163,9 @@ function TransactionDetails({ kind, id }: { kind: Kind; id: string }) {
         <LoadingSkeleton />
       ) : (
         r.data && (
-          <section className="panel space-y-4">
+          <section className="panel p-3 space-y-3">
             <Link to={base(kind)}>← All transactions</Link>
-            <h2 className="text-xl font-semibold">{r.data.number}</h2>
+            <h2 className="text-lg font-semibold">{r.data.number}</h2>
             <p>{new Date(r.data.completedAt).toLocaleString()}</p>
             <p>{r.data.remarks}</p>
             <p className="break-all text-sm">
@@ -301,8 +301,8 @@ function TransactionForm({
     }
   }
   return (
-    <section className="panel">
-      <h2 className="mb-4 text-xl font-semibold">Record completed movement</h2>
+    <section className="panel p-3">
+      <h2 className="mb-4 text-lg font-semibold">Record completed movement</h2>
       <ErrorMessage
         error={error || balances.error || destinations.error || suppliers.error}
       />
@@ -312,8 +312,8 @@ function TransactionForm({
           void submit()
         }}
       >
-        <fieldset disabled={busy} className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <fieldset disabled={busy} className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {kind === 'SupplierReturn' && (
               <Field label="Supplier">
                 <Select
@@ -375,8 +375,8 @@ function TransactionForm({
             )
             const source = options.find((b) => b.id === l.sourceBalanceId)
             return (
-              <div className="rounded-xl border p-4 space-y-4" key={i}>
-                <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border p-3 space-y-3" key={i}>
+                <div className="grid gap-3 md:grid-cols-2">
                   <Field label={`Source ${i + 1}: product / lot / location`}>
                     <Select
                       required

@@ -12,10 +12,10 @@ public sealed class SupplierProduct : OperationalRecord
     [MaxLength(200)] public string? Brand { get; set; }
     [MaxLength(100)] public string? Barcode { get; set; }
     public decimal? Rsp { get; set; }
-    public decimal SupplierPrice { get; set; }
+    public decimal? SupplierPrice { get; set; }
     [MaxLength(16)] public string DiscountType { get; set; } = "None";
     public decimal DiscountValue { get; set; }
-    public decimal NetUnitPrice { get; set; }
+    public decimal? NetUnitPrice { get; set; }
     public decimal? AvailableQuantity { get; set; }
     public Guid? LatestImportId { get; set; }
     public bool IsActive { get; set; } = true;
@@ -51,11 +51,11 @@ public sealed class SupplierImportOptions
     [Range(1, 72)] public int PreviewHours { get; set; } = 24;
 }
 public sealed record CatalogRequest(string Code, string Name, string? Brand, string? Barcode, decimal? Rsp,
-    decimal SupplierPrice, string? DiscountType, decimal DiscountValue, decimal? AvailableQuantity,
+    decimal? SupplierPrice, string? DiscountType, decimal DiscountValue, decimal? AvailableQuantity,
     Guid? ProductId, bool IsActive, string? RowVersion);
 public sealed record CatalogDto(Guid Id, Guid SupplierId, string Code, Guid? ProductId, string Name, string? Brand,
-    string? Barcode, decimal? Rsp, decimal SupplierPrice, string DiscountType, decimal DiscountValue,
-    decimal NetUnitPrice, decimal? AvailableQuantity, Guid? LatestImportId, bool IsActive, DateTimeOffset UpdatedAt, string RowVersion);
+    string? Barcode, decimal? Rsp, decimal? SupplierPrice, string DiscountType, decimal DiscountValue,
+    decimal? NetUnitPrice, decimal? AvailableQuantity, Guid? LatestImportId, bool IsActive, DateTimeOffset UpdatedAt, string RowVersion);
 public sealed record MappingRequest(Dictionary<string, int> Mapping, string RowVersion);
 public sealed record ImportConfirmRequest(string RowVersion);
 public sealed record ImportPreviewRow(int RowNumber, CatalogRequest? Product, decimal? NetUnitPrice, bool Existing, string[] Errors);
@@ -65,10 +65,10 @@ public sealed record ImportPreview(Guid Id, string FileName, string[] Headers, D
 public sealed record ImportHistoryDto(Guid Id, string FileName, DateTimeOffset CreatedAt, Guid? CreatedBy,
     DateTimeOffset? ConfirmedAt, int RowCount);
 public sealed record PricingSnapshot(Guid? SupplierProductId, string SupplierProductCode, string ProductName,
-    string? Brand, string? Barcode, decimal? Rsp, decimal SupplierPrice, string DiscountType,
-    decimal DiscountValue, decimal NetUnitPrice, decimal Quantity, decimal GrossAmount, decimal DiscountAmount, decimal LineTotal)
+    string? Brand, string? Barcode, decimal? Rsp, decimal? SupplierPrice, string DiscountType,
+    decimal DiscountValue, decimal? NetUnitPrice, decimal Quantity, decimal? GrossAmount, decimal? DiscountAmount, decimal? LineTotal)
 {
-    public string LineTotalText => LineTotal.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
+    public string? LineTotalText => LineTotal?.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
 }
 public sealed record PricingSummary(int SelectedProducts, decimal TotalQuantity, decimal GrossAmount,
     decimal DiscountAmount, decimal NetAmount, int UnpricedLines)
@@ -82,8 +82,9 @@ public static class PurchasePricing
 {
     // Unit prices are rounded first, then multiplied by whole-unit quantities. Never discount RSP.
     public const decimal MaximumPrice = 999999999m;
+    public static decimal? Money(decimal? value) => value.HasValue ? Money(value.Value) : null;
     public static decimal Money(decimal value) => decimal.Round(value, 3, MidpointRounding.AwayFromZero);
-    public static (string Type, decimal Net) Calculate(decimal price, string? type, decimal value)
+    public static (string Type, decimal? Net) Calculate(decimal? price, string? type, decimal value)
     {
         type = string.IsNullOrWhiteSpace(type) ? "None" : type.Trim();
         if (price < 0 || price > MaximumPrice || price != Money(price)) Fail("Supplier price must be non-negative, at most 999999999 KWD, with up to three decimal places.");
@@ -91,7 +92,7 @@ public static class PurchasePricing
         if (type is not ("None" or "Percentage" or "Fixed")) Fail("Discount type must be None, Percentage or Fixed.");
         if (type == "None" && value != 0) Fail("Choose a discount type for a non-zero discount.");
         if (type == "Percentage" && value > 100) Fail("Percentage discount must be between 0 and 100.");
-        if (type == "Fixed" && value > price) Fail("Fixed discount cannot exceed supplier price.");
+        if (type == "Fixed" && price.HasValue && value > price) Fail("Fixed discount cannot exceed supplier price.");
         return (type, Money(type == "Percentage" ? price * (1 - value / 100) : type == "Fixed" ? price - value : price));
     }
     public static PricingSnapshot Snapshot(SupplierProduct p, decimal quantity) => new(p.Id, p.Code, p.Name,
@@ -115,7 +116,8 @@ public static class SupplierCatalogConfiguration
         p.ToTable(t => { t.HasCheckConstraint("CK_SupplierProduct_Price", "[SupplierPrice]>=0 AND [NetUnitPrice]>=0 AND ([Rsp] IS NULL OR [Rsp]>=0) AND [DiscountValue]>=0"); });
         var i = model.Entity<SupplierStockImport>(); OperationRules.Configure(i);
         i.HasIndex(x => new { x.SupplierId, x.CreatedAt });
-        i.HasIndex(x => new { x.SupplierId, x.FileHash }).IsUnique().HasFilter("[ConfirmedAt] IS NOT NULL");
+        // File hashes are traceability metadata; repeated supplier lists are valid imports.
+        i.HasIndex(x => new { x.SupplierId, x.FileHash });
         i.HasOne<Wros.Api.Modules.Suppliers.Supplier>().WithMany().HasForeignKey(x => x.SupplierId).OnDelete(DeleteBehavior.Restrict);
         i.HasMany(x => x.Rows).WithOne().HasForeignKey(x => x.ImportId).OnDelete(DeleteBehavior.Restrict);
         var r = model.Entity<SupplierStockImportRow>(); r.HasKey(x => x.Id);

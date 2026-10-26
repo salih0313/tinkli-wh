@@ -21,7 +21,7 @@ export default function Foundation() {
     return () => controller.abort()
   }, [attempt])
   return <><Heading eyebrow="Workspace settings" title="System status" detail="Connection health for the services that power your workspace." action={<Button variant="secondary" icon="refresh" loading={loading} onClick={() => setAttempt(value => value + 1)}>Refresh status</Button>} />
-    <div className="grid gap-5 md:grid-cols-2" aria-live="polite" aria-busy={loading}>{['API process', 'Database readiness'].map((name, index) => {
+    <div className="grid gap-3 md:grid-cols-2" aria-live="polite" aria-busy={loading}>{['API process', 'Database readiness'].map((name, index) => {
       const result = results[index]
       const healthy = result?.report?.status === 'Healthy'
       return <section key={name} className="panel health-card"><div className="health-title"><div><p className="eyebrow">{index === 0 ? 'Application service' : 'Persistence service'}</p><h2>{name}</h2></div><span className="stat-icon"><Icon name={index === 0 ? 'activity' : 'warehouse'} /></span></div>
@@ -29,6 +29,6 @@ export default function Foundation() {
         {result?.report && <p className="health-reference">Reference: {result.report.correlationId}</p>}</>}
       </section>
     })}</div>
-    <Card className="mt-6"><SectionHeader title="Developer resources" detail="Explore the API specification available in the Development environment." action={<a className="text-button" href="/openapi/v1.json" target="_blank" rel="noreferrer">API specification<Icon name="external" width="15" height="15" /><span className="sr-only"> (opens in a new tab)</span></a>} /></Card>
+    <Card className="mt-4"><SectionHeader title="Developer resources" detail="Explore the API specification available in the Development environment." action={<a className="text-button" href="/openapi/v1.json" target="_blank" rel="noreferrer">API specification<Icon name="external" width="15" height="15" /><span className="sr-only"> (opens in a new tab)</span></a>} /></Card>
   </>
 }

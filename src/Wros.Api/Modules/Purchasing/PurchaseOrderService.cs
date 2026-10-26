@@ -68,7 +68,7 @@ public sealed class PurchaseOrderService(WrosDbContext db, AuditService audit, D
                 }
             }
             else if (old is not null && (old.SupplierProductId.HasValue || old.ProductId != line.ProductId)) throw new ApiProblemException(400, "An existing supplier pricing snapshot cannot be removed or reassigned.");
-            else if (old is null) throw new ApiProblemException(400, "New PO lines require a mapped supplier catalog product and price.");
+            else if (old is null) throw new ApiProblemException(400, "New PO lines require a mapped supplier catalog product.");
             return next;
         }).ToList();
         if (id.HasValue)
@@ -132,8 +132,8 @@ public sealed class PurchaseOrderService(WrosDbContext db, AuditService audit, D
     private static PricingSnapshot? ReadPricing(PurchaseOrderLine line) => line.PricingJson is null ? null : JsonSerializer.Deserialize<PricingSnapshot>(line.PricingJson);
     private static PricingSummary Summary(PurchaseOrder order)
     {
-        var prices = order.Lines.Select(ReadPricing).OfType<PricingSnapshot>().ToArray();
-        return new(order.Lines.Count, order.Lines.Sum(x => x.Quantity), prices.Sum(x => x.GrossAmount), prices.Sum(x => x.DiscountAmount), prices.Sum(x => x.LineTotal), order.Lines.Count - prices.Length);
+        var prices = order.Lines.Select(ReadPricing).OfType<PricingSnapshot>().Where(x => x.SupplierPrice.HasValue).ToArray();
+        return new(order.Lines.Count, order.Lines.Sum(x => x.Quantity), prices.Sum(x => x.GrossAmount) ?? 0, prices.Sum(x => x.DiscountAmount) ?? 0, prices.Sum(x => x.LineTotal) ?? 0, order.Lines.Count - prices.Length);
     }
     private IQueryable<PurchaseOrder> Query() => db.PurchaseOrders.Include(x => x.Supplier).Include(x => x.Lines).ThenInclude(x => x.Product).AsSplitQuery();
     private static OrderDto ToDto(PurchaseOrder x) => new(x.Id, x.Number, x.SupplierId, x.Supplier.Code, x.Supplier.Name,

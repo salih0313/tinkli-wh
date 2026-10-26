@@ -36,28 +36,28 @@ export default function InventoryDashboard() {
       ) : (
         r.data && (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
                 ['Products / SKUs', `${r.data.products} / ${r.data.skus}`],
                 ['Physical units', r.data.physical.toLocaleString()],
                 ['Sellable units', r.data.sellable.toLocaleString()],
                 ['Expired units', r.data.expired.toLocaleString()],
               ].map(([label, value]) => (
-                <section className="panel" key={label}>
+                <section className="panel p-3" key={label}>
                   <p className="field-hint">{label}</p>
-                  <strong className="text-3xl">{value}</strong>
+                  <strong className="text-2xl">{value}</strong>
                 </section>
               ))}
             </div>
-            <section className="panel">
-              <h2 className="text-xl font-semibold">
+            <section className="panel p-3">
+              <h2 className="text-lg font-semibold">
                 Attention and availability
               </h2>
               <p className="my-3">
                 {r.data.approachingExpiry} lots expire within{' '}
                 {r.data.expiryAlertDays} days. Low stock: {r.data.lowStock}.
               </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-3">
                 <Link className="button secondary" to="/inventory">
                   Explore stock
                 </Link>
@@ -66,11 +66,11 @@ export default function InventoryDashboard() {
                 </Link>
               </div>
             </section>
-            <section className="panel">
-              <h2 className="mb-4 text-xl font-semibold">Warehouses</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
+            <section className="panel p-3">
+              <h2 className="mb-4 text-lg font-semibold">Warehouses</h2>
+              <div className="grid gap-3 sm:grid-cols-2">
                 {r.data.warehouses.map((w) => (
-                  <div key={w.warehouseId} className="rounded-xl border p-4">
+                  <div key={w.warehouseId} className="rounded-xl border p-3">
                     <strong>{w.name}</strong>
                     <p>
                       {w.physical.toLocaleString()} physical /{' '}
@@ -81,8 +81,8 @@ export default function InventoryDashboard() {
               </div>
               {!r.data.warehouses.length && <p>No posted stock yet.</p>}
             </section>
-            <section className="panel">
-              <h2 className="mb-4 text-xl font-semibold">Recent movements</h2>
+            <section className="panel p-3">
+              <h2 className="mb-4 text-lg font-semibold">Recent movements</h2>
               <LedgerTable items={r.data.recentMovements.items} />
             </section>
           </>
