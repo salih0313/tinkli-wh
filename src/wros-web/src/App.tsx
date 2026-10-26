@@ -37,7 +37,7 @@ function Access({ permission, anyOf, admin = false }: { permission?: string; any
   const { user } = useSession()
   if (user?.mustChangePassword) return <Navigate to="/password" replace />
   if ((admin && !user?.roles.includes('SuperAdmin')) || (permission && !user?.permissions.includes(permission)) || (anyOf && !anyOf.some(value => user?.permissions.includes(value))))
-    return <p role="alert" className="notice error">You do not have permission to access this page.</p>
+    return <ErrorMessage error="You do not have permission to access this page." />
   return <Outlet />
 }
 function LoginRoute() {

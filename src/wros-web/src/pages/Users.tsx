@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { get, mutate } from '../api/client'
@@ -10,7 +11,7 @@ import { Dialog } from '../components/ui/Dialog'
 import { PasswordInput } from '../components/forms/PasswordInput'
 import { DataTable } from '../components/data-display/DataTable'
 import { Pagination } from '../components/data-display/Pagination'
-import { EmptyState, LoadingSkeleton, Toast } from '../components/feedback/States'
+import { EmptyState, LoadingSkeleton } from '../components/feedback/States'
 import { useConfirm } from '../hooks/useConfirm'
 import { humanize } from '../lib/presentation'
 
@@ -25,7 +26,7 @@ export default function Users() {
   const [roles, setRoles] = useState<Role[]>([])
   const [selected, setSelected] = useState<User | 'new' | null>(null)
   const [error, setError] = useState<unknown>(null)
-  const [success, setSuccess] = useState('')
+
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
@@ -44,14 +45,14 @@ export default function Users() {
     const assigned = values.getAll('roles') as string[]
     if (assigned.length === 0) { setError('Choose at least one role.'); return }
     if (selected !== 'new' && selected.isActive && !values.has('active') && !await confirm('Deactivate this user and invalidate their sessions?')) return
-    setBusy(true); setError(null); setSuccess('')
+    setBusy(true); setError(null)
     try {
       if (selected === 'new') {
         await mutate('POST', '/api/v1/users', { userName: values.get('username'), password: values.get('password'), roles: assigned })
-        setSuccess('User created. Share the temporary password through an approved secure channel. They must change it at first sign-in.')
+        notifySuccess('User created. Share the temporary password through an approved secure channel. They must change it at first sign-in.')
       } else {
         await mutate('PUT', `/api/v1/users/${selected.id}`, { isActive: values.has('active'), roles: assigned, concurrencyStamp: selected.concurrencyStamp })
-        setSuccess('User updated. Their existing sessions are invalidated.')
+        notifySuccess('User updated. Their existing sessions are invalidated.')
       }
       form.reset(); reload(); await refresh()
     } catch (failure) { setError(failure) }
@@ -62,23 +63,23 @@ export default function Users() {
     const form = event.currentTarget
     if (!await confirm('Reset this user’s password and invalidate their sessions?')) return
     const values = new FormData(form)
-    setBusy(true); setError(null); setSuccess('')
+    setBusy(true); setError(null)
     try {
       await mutate('POST', `/api/v1/users/${selected.id}/reset-password`, { newPassword: values.get('newPassword'), concurrencyStamp: selected.concurrencyStamp })
-      form.reset(); setSuccess('Password reset. The user must change the temporary password at next sign-in.'); reload()
+      form.reset(); notifySuccess('Password reset. The user must change the temporary password at next sign-in.'); reload()
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
   }
   async function unlock() {
     if (!selected || selected === 'new') return
     setBusy(true); setError(null)
-    try { await mutate('POST', `/api/v1/users/${selected.id}/unlock`, { concurrencyStamp: selected.concurrencyStamp }); setSuccess('Account unlocked.'); reload() }
+    try { await mutate('POST', `/api/v1/users/${selected.id}/unlock`, { concurrencyStamp: selected.concurrencyStamp }); notifySuccess('Account unlocked.'); reload() }
     catch (failure) { setError(failure) }
     finally { setBusy(false) }
   }
-  function manage(item: User) { setSelected(item); setError(null); setSuccess('') }
-  return <><Heading eyebrow="Administration" title="Users" detail="The right people. The right access. Manage your workspace team." action={<Button icon="plus" disabled={busy} onClick={() => { setSelected('new'); setError(null); setSuccess('') }}>Create user</Button>} />
-    {!selected && <ErrorMessage error={error} />}{success && <Toast onDismiss={() => setSuccess('')}>{success}</Toast>}
+  function manage(item: User) { setSelected(item); setError(null) }
+  return <><Heading eyebrow="Administration" title="Users" detail="The right people. The right access. Manage your workspace team." action={<Button icon="plus" disabled={busy} onClick={() => { setSelected('new'); setError(null) }}>Create user</Button>} />
+    {!selected && <ErrorMessage error={error} />}
     <section className="panel" aria-label="User directory"><div className="toolbar">
       <form className="search-form" onSubmit={event => { event.preventDefault(); setPage(1); setQuery(search) }}>
         <div className="search-control"><Icon name="search" /><input aria-label="Search username" placeholder="Search by username…" maxLength={64} value={search} onChange={event => setSearch(event.target.value)} /></div>

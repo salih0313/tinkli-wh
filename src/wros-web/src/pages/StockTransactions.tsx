@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { mutate } from '../api/client'
@@ -47,8 +48,7 @@ export default function StockTransactions({ kind }: { kind: Kind }) {
   const { id } = useParams(),
     [page, setPage] = useState(1),
     [creating, setCreating] = useState(false),
-    [revision, setRevision] = useState(0),
-    [success, setSuccess] = useState('')
+    [revision, setRevision] = useState(0)
   const r = useResource<Page<Transaction>>(
     `/api/v1/stock-transactions/${kind}?page=${page}&pageSize=20&revision=${revision}`,
   )
@@ -62,7 +62,7 @@ export default function StockTransactions({ kind }: { kind: Kind }) {
             <Button
               icon="plus"
               onClick={() => {
-                setSuccess('')
+
                 setCreating(true)
               }}
             >
@@ -72,11 +72,7 @@ export default function StockTransactions({ kind }: { kind: Kind }) {
         }
       />
       <ErrorMessage error={r.error} />
-      {success && (
-        <p role="status" className="notice success">
-          {success}
-        </p>
-      )}
+
       {id ? (
         <TransactionDetails kind={kind} id={id} />
       ) : creating ? (
@@ -84,7 +80,7 @@ export default function StockTransactions({ kind }: { kind: Kind }) {
           kind={kind}
           onCancel={() => setCreating(false)}
           onDone={(number) => {
-            setSuccess(`${number} recorded successfully.`)
+            notifySuccess(`${number} recorded successfully.`)
             setCreating(false)
             setRevision((v) => v + 1)
           }}

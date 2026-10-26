@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
@@ -23,6 +24,7 @@ export default function Login() {
       await mutate('POST', '/api/v1/auth/login', { userName: data.get('username'), password: data.get('password') })
       form.reset()
       const session = await refresh()
+      if (session) notifySuccess('Signed in successfully.')
       if (!session) throw new Error('The browser did not accept the session cookie. Open the app at http://localhost:5173 through the Vite proxy, or use a same-origin HTTPS setup.')
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }

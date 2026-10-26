@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -21,7 +22,7 @@ export default function Password() {
     setBusy(true)
     try {
       await mutate('POST', '/api/v1/auth/change-password', { currentPassword: data.get('currentPassword'), newPassword: data.get('newPassword') })
-      form.reset(); clear(); navigate('/login', { replace: true })
+      notifySuccess('Password changed. Sign in with your new password.'); form.reset(); clear(); navigate('/login', { replace: true })
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
   }

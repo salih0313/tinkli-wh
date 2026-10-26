@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 import { useEffect, useState } from 'react'
 import WarehouseHierarchy from './WarehouseHierarchy'
 import type { FormEvent } from 'react'
@@ -10,7 +11,7 @@ import { Badge, Button, Select } from '../components/ui/Controls'
 import { Dialog } from '../components/ui/Dialog'
 import { DataTable } from '../components/data-display/DataTable'
 import { Pagination } from '../components/data-display/Pagination'
-import { EmptyState, LoadingSkeleton, Toast } from '../components/feedback/States'
+import { EmptyState, LoadingSkeleton } from '../components/feedback/States'
 import { useLookup } from '../hooks/useLookup'
 import type { MasterRecord } from '../features/master-data/types'
 
@@ -33,7 +34,7 @@ function MasterDataTable({ kind }: { kind: MasterKind }) {
   const [data, setData] = useState<Page<MasterRecord> | null>(null)
   const [page, setPage] = useState(1); const [search, setSearch] = useState(''); const [query, setQuery] = useState(''); const [active, setActive] = useState('')
   const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [revision, setRevision] = useState(0)
-  const [error, setError] = useState<unknown>(null); const [success, setSuccess] = useState('')
+  const [error, setError] = useState<unknown>(null);
   const [selected, setSelected] = useState<MasterRecord | 'new' | null>(null)
   const parentLookup = useLookup<MasterRecord>(definition.parent ? `/api/v1/${definition.parent}` : null)
   useEffect(() => {
@@ -50,13 +51,13 @@ function MasterDataTable({ kind }: { kind: MasterKind }) {
       ...Object.fromEntries(['contactPerson', 'phone', 'email', 'address', 'remarks', 'barcode', 'brand', 'externalProductId'].map(key => [key, values.get(key) || null])), trackExpiry: values.has('trackExpiry') }
     try {
       await mutate(item ? 'PUT' : 'POST', `/api/v1/${kind}${item ? `/${item.id}` : ''}`, body)
-      setSelected(null); setRevision(value => value + 1); setSuccess(`${definition.singular[0].toUpperCase() + definition.singular.slice(1)} saved.`)
+      setSelected(null); setRevision(value => value + 1); notifySuccess(`${definition.singular[0].toUpperCase() + definition.singular.slice(1)} saved.`)
     } catch (failure) { setError(failure) } finally { setBusy(false) }
   }
   const parent = parentLookup.items.find(value => value.id === parentId)
   return <><Heading eyebrow="Master data" title={definition.title} detail={parent ? `${parent.parentPath ? `${parent.parentPath} / ` : ''}${parent.code} · ${parent.name}` : 'Maintain the reference data your warehouse team relies on.'} action={canManage && <Button icon="plus" onClick={() => { setSelected('new'); setError(null) }}>Create {definition.singular}</Button>} />
     {parentId && <Link className="text-button mb-4" to={`/${definition.parent}`}>Back to {definition.parent}</Link>}
-    {!selected && <ErrorMessage error={error} />}{success && <Toast onDismiss={() => setSuccess('')}>{success}</Toast>}
+    {!selected && <ErrorMessage error={error} />}
     <section className="panel"><div className="toolbar"><form className="search-form" onSubmit={event => { event.preventDefault(); setPage(1); setQuery(search) }}><input aria-label="Search code or name" placeholder="Search code or name…" value={search} maxLength={100} onChange={event => setSearch(event.target.value)} /><Button type="submit" variant="secondary">Search</Button></form>
       <Select aria-label="Filter status" className="status-filter" value={active} onChange={event => { setActive(event.target.value); setPage(1) }}><option value="">All statuses</option><option value="true">Active</option><option value="false">Inactive</option></Select><Button variant="ghost" icon="refresh" disabled={loading} onClick={() => setRevision(value => value + 1)}>Refresh</Button></div>
       {loading ? <LoadingSkeleton label={`Loading ${definition.title}…`} /> : data?.items.length ? <DataTable items={data.items} getKey={value => value.id} caption={definition.title} columns={[

@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 import { useEffect, useId, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -7,7 +8,7 @@ import { ErrorMessage, Field, Heading } from '../components/Form'
 import { Badge, Button, IconButton, Select } from '../components/ui/Controls'
 import { Icon } from '../components/ui/Icon'
 import { Dialog } from '../components/ui/Dialog'
-import { EmptyState, LoadingSkeleton, Toast } from '../components/feedback/States'
+import { EmptyState, LoadingSkeleton } from '../components/feedback/States'
 import { useLookup } from '../hooks/useLookup'
 import { useConfirm } from '../hooks/useConfirm'
 import type { MasterRecord } from '../features/master-data/types'
@@ -67,7 +68,7 @@ export default function WarehouseHierarchy({ kind }: { kind: HierarchyKind }) {
   const [editor, setEditor] = useState<Editor | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
-  const [success, setSuccess] = useState('')
+
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [revision, setRevision] = useState(0)
@@ -93,7 +94,7 @@ export default function WarehouseHierarchy({ kind }: { kind: HierarchyKind }) {
   async function toggle(nodeKind: HierarchyKind, item: MasterRecord) {
     if (!await confirm({ title: `${item.isActive ? 'Deactivate' : 'Reactivate'} ${labels[nodeKind]}?`, message: `${item.code} · ${item.name}. Existing history is preserved. This changes only this record; child statuses are not changed.`, confirmLabel: item.isActive ? 'Deactivate' : 'Reactivate' })) return
     setBusy(true); setError(null)
-    try { await mutate('PUT', `/api/v1/${nodeKind}/${item.id}`, { ...item, isActive: !item.isActive }); refresh(); setSuccess(`${item.name} ${item.isActive ? 'deactivated' : 'reactivated'}.`) }
+    try { await mutate('PUT', `/api/v1/${nodeKind}/${item.id}`, { ...item, isActive: !item.isActive }); refresh(); notifySuccess(`${item.name} ${item.isActive ? 'deactivated' : 'reactivated'}.`) }
     catch (failure) { setError(failure) } finally { setBusy(false) }
   }
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -104,7 +105,7 @@ export default function WarehouseHierarchy({ kind }: { kind: HierarchyKind }) {
         code: values.get('code'), name: values.get('name'), description: values.get('description') || null,
         isActive: values.has('active'), parentId: editor.item?.parentId ?? editor.parent?.id ?? values.get('parentId') ?? null, rowVersion: editor.item?.rowVersion,
       })
-      setEditor(null); refresh(); setSuccess(`${titles[editor.kind].slice(0, -1)} saved.`)
+      setEditor(null); refresh(); notifySuccess(`${titles[editor.kind].slice(0, -1)} saved.`)
     } catch (failure) { setError(failure) } finally { setBusy(false) }
   }
   const actions: Actions = { structure: warehouseId ? structure : null, canManage, revision, busy, edit, toggle }
@@ -113,7 +114,7 @@ export default function WarehouseHierarchy({ kind }: { kind: HierarchyKind }) {
     <Heading eyebrow="Warehouse setup" title={warehouseId ? structure?.warehouse.name ?? 'Warehouse structure' : kind === 'warehouses' ? 'Warehouses' : titles[kind]} detail={warehouseId ? `${structure?.warehouse.code ?? ''} · Manage areas, racks and locations` : parent ? `${parent.code} · ${parent.name}` : 'Your storage network at a glance. Open a warehouse to manage its structure.'} action={canManage && <Button icon="plus" disabled={warehouseId ? !structure : !!parentId && !parent} onClick={() => edit(warehouseId && structure ? { kind: 'areas', parent: structure.warehouse } : { kind, parent })}>Add {warehouseId ? 'area' : labels[kind]}</Button>} />
     {(warehouseId || kind !== 'warehouses') && <Link to="/warehouses" className="text-button mb-4">View warehouse network</Link>}
     {!editor && <ErrorMessage error={error} />}<ErrorMessage error={parents.error} />
-    {success && <Toast onDismiss={() => setSuccess('')}>{success}</Toast>}
+
     {warehouseId ? <section className="panel compact-tree" aria-label="Warehouse structure">
       <div className="tree-toolbar"><span>Areas / Racks / Locations</span><Button variant="ghost" icon="refresh" disabled={networkLoading} onClick={refresh}>Refresh</Button></div>
       <ErrorMessage error={networkError} />

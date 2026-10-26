@@ -1,3 +1,4 @@
+import { notifySuccess } from '../feedback/notifications'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useSession } from '../../auth/SessionContext'
@@ -52,7 +53,7 @@ export default function AppShell() {
   }, [])
   async function logout() {
     setBusy(true); setError(null)
-    try { await mutate('POST', '/api/v1/auth/logout'); clear() }
+    try { await mutate('POST', '/api/v1/auth/logout'); clear(); notifySuccess('Signed out.') }
     catch (failure) { setError(failure) }
     finally { setBusy(false) }
   }

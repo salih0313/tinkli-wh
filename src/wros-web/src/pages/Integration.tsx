@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 import { useState } from 'react'
 import { mutate } from '../api/client'
 import type { Page } from '../api/types'
@@ -53,7 +54,6 @@ export default function Integration() {
     [deductionPage, setDeductionPage] = useState(1),
     [revision, setRevision] = useState(0),
     [error, setError] = useState<unknown>(null),
-    [success, setSuccess] = useState(''),
     [busy, setBusy] = useState(false),
     [client, setClient] = useState<Client>({
       id: '',
@@ -79,9 +79,8 @@ export default function Integration() {
     try {
       await mutate('POST', '/api/v1/integration-management/clients', client)
       setRevision((v) => v + 1)
-      setSuccess('Changes saved successfully.')
       setClient({ id: '', name: '', isActive: true, rowVersion: '' })
-      setSuccess('Client saved successfully.')
+      notifySuccess('Client saved successfully.')
     } catch (e) {
       setError(e)
     } finally {
@@ -98,7 +97,7 @@ export default function Integration() {
         mapping,
       )
       setRevision((v) => v + 1)
-      setSuccess('Changes saved successfully.')
+      notifySuccess('Changes saved successfully.')
       setMapping({
         clientId: '',
         externalProductId: '',
@@ -118,11 +117,7 @@ export default function Integration() {
         detail="Separate machine identities, stable product mappings and immutable inventory snapshots. Legacy e-commerce remains independent."
       />
       <ErrorMessage error={error || status.error || mappings.error} />
-      {success && (
-        <p role="status" className="notice success">
-          {success}
-        </p>
-      )}
+
       {status.loading ? (
         <LoadingSkeleton />
       ) : (

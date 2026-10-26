@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 export class ApiError extends Error {
   constructor(public status: number, message: string, public correlationId?: string) { super(message) }
 }
@@ -53,7 +54,7 @@ export async function download(path: string, fileName: string): Promise<void> {
   link.href = url
   link.download = fileName
   document.body.appendChild(link)
-  try { link.click() } finally {
+  try { link.click(); notifySuccess('Download started.') } finally {
     link.remove()
     // Allow the browser to start reading the file before releasing its URL.
     setTimeout(() => URL.revokeObjectURL(url), 60000)

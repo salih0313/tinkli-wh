@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { get, mutate } from '../api/client'
@@ -7,13 +8,13 @@ import { ErrorMessage, Heading } from '../components/Form'
 import { Badge, Button } from '../components/ui/Controls'
 import { DataTable } from '../components/data-display/DataTable'
 import { Pagination } from '../components/data-display/Pagination'
-import { EmptyState, LoadingSkeleton, Toast } from '../components/feedback/States'
+import { EmptyState, LoadingSkeleton } from '../components/feedback/States'
 import { useConfirm } from '../hooks/useConfirm'
 export default function DeliveryNoteDetails() {
   const { id } = useParams(); const { confirm, confirmation } = useConfirm()
   const [receipt, setReceipt] = useState<Receipt | null>(null); const [movements, setMovements] = useState<Page<Movement> | null>(null)
   const [page, setPage] = useState(1); const [revision, setRevision] = useState(0); const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<unknown>(null); const [success, setSuccess] = useState('')
+  const [error, setError] = useState<unknown>(null);
   useEffect(() => {
     const controller = new AbortController(); setLoading(true); setError(null)
     Promise.all([get<Receipt>(`/api/v1/delivery-notes/${id}`, controller.signal), get<Page<Movement>>(`/api/v1/delivery-notes/${id}/movements?page=${page}&pageSize=20`, controller.signal)]).then(([value, ledger]) => { setReceipt(value); setMovements(ledger) }).catch(failure => { if (!controller.signal.aborted) setError(failure) }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
@@ -22,10 +23,10 @@ export default function DeliveryNoteDetails() {
   async function post() {
     if (!receipt || !await confirm('Post this verified receipt? All lot and location totals must match. This atomically adds stock and locks receipt quantities, batches and expiry. Later changes can only reallocate available stock.')) return
     setBusy(true); setError(null)
-    try { await mutate('POST', `/api/v1/delivery-notes/${id}/post`, { rowVersion: receipt.rowVersion }); setPage(1); setRevision(value => value + 1); setSuccess('Receipt posted. Available physical stock and immutable receipt movements were created together.') }
+    try { await mutate('POST', `/api/v1/delivery-notes/${id}/post`, { rowVersion: receipt.rowVersion }); setPage(1); setRevision(value => value + 1); notifySuccess('Receipt posted. Available physical stock and immutable receipt movements were created together.') }
     catch (failure) { setError(failure) } finally { setBusy(false) }
   }
-  return <><Heading eyebrow="Receiving" title={receipt?.number ?? 'Delivery note'} detail="Actual received products, distinct lots and traceable location placements." action={<Button variant="secondary" icon="refresh" disabled={busy || loading} onClick={() => setRevision(value => value + 1)}>Refresh</Button>} /><ErrorMessage error={error} />{success && <Toast onDismiss={() => setSuccess('')}>{success}</Toast>}
+  return <><Heading eyebrow="Receiving" title={receipt?.number ?? 'Delivery note'} detail="Actual received products, distinct lots and traceable location placements." action={<Button variant="secondary" icon="refresh" disabled={busy || loading} onClick={() => setRevision(value => value + 1)}>Refresh</Button>} /><ErrorMessage error={error} />
     {loading ? <div className="panel"><LoadingSkeleton label="Loading delivery note…" /></div> : receipt && <><div className="document-toolbar"><Link className="secondary" to="/delivery-notes">All delivery notes</Link>{receipt.status === 'Draft' ? <><Link className="secondary" to={`/delivery-notes/${id}/edit`}>Edit draft</Link><Button disabled={busy} onClick={() => void post()}>Verify & post stock</Button></> : <Link className="primary" to={`/delivery-notes/${id}/correct`}>Correct rack allocations</Link>}</div>
     <section className="panel document-sheet"><div className="document-head"><div><p className="eyebrow">Delivery note</p><h2>{receipt.number}</h2></div><Badge tone={receipt.status === 'Posted' ? 'success' : 'neutral'}>{receipt.status}</Badge></div><dl className="document-facts"><div><dt>Supplier</dt><dd>{receipt.supplierCode} · {receipt.supplierName}</dd></div><div><dt>Purchase order</dt><dd>{receipt.purchaseOrderNumber ?? 'Standalone receipt'}</dd></div><div><dt>Received date & time</dt><dd>{new Date(receipt.receivedAt).toLocaleString()}<span className="field-hint">UTC: {new Date(receipt.receivedAt).toISOString()}</span></dd></div><div><dt>Supplier reference</dt><dd>{receipt.supplierReference ?? 'Not provided'}</dd></div>{receipt.postedAt && <div><dt>Posted (UTC)</dt><dd>{new Date(receipt.postedAt).toISOString()}<span className="field-hint break-all">By {receipt.postedBy}</span></dd></div>}<div><dt>Last updated (UTC)</dt><dd>{new Date(receipt.updatedAt).toISOString()}</dd></div></dl>{receipt.remarks && <section className="document-remarks"><h3>General remarks</h3><p>{receipt.remarks}</p></section>}</section>
     <div className="space-y-3 mt-4">{receipt.lines.map(line => <section className="panel" key={line.id}><div className="section-header"><div><h2>{line.sku} · {line.name}</h2><p>{line.quantity.toLocaleString()} actual received units · {line.lots.length} distinct lots</p></div>{line.trackExpiry && <Badge tone="blue">Expiry tracked</Badge>}</div><div className="p-3 space-y-3">{line.lots.map(lot => <article className="lot-summary" key={lot.id}><h3 className="text-sm font-semibold">{lot.quantity.toLocaleString()} units · Batch {lot.supplierBatch ?? 'not provided'}</h3><p className="field-hint break-all font-mono mt-2">Lot ID: {lot.id}</p><p className="field-hint mt-2">Expiry: {lot.expiry ?? 'not provided'} · Received: {new Date(lot.receivedAt).toISOString()}</p><h4 className="form-section-title mt-5">{receipt.status === 'Posted' ? 'Original receipt allocations (preserved)' : 'Draft allocations'}</h4>{lot.allocations.length ? <DataTable items={lot.allocations} getKey={a => `${a.rackId}:${a.locationId}`} caption="Original receipt allocations" columns={[{ key: 'path', label: 'Warehouse / location', render: a => a.path }, { key: 'units', label: 'Received units', render: a => a.quantity.toLocaleString() }]} /> : <p className="field-hint">No destinations allocated yet.</p>}

@@ -1,3 +1,4 @@
+import { notifySuccess } from '../components/feedback/notifications'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { get, mutate } from '../api/client'
@@ -6,7 +7,7 @@ import { useSession } from '../auth/SessionContext'
 import { ErrorMessage, Heading } from '../components/Form'
 import { Button, Badge } from '../components/ui/Controls'
 import { Icon } from '../components/ui/Icon'
-import { EmptyState, LoadingSkeleton, Toast } from '../components/feedback/States'
+import { EmptyState, LoadingSkeleton } from '../components/feedback/States'
 import { humanize } from '../lib/presentation'
 
 export default function Roles() {
@@ -17,7 +18,7 @@ export default function Roles() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
-  const [success, setSuccess] = useState('')
+
   useEffect(() => {
     const abort = new AbortController(); setLoading(true); setError(null)
     Promise.all([get<Role[]>('/api/v1/roles', abort.signal), get<string[]>('/api/v1/roles/permissions', abort.signal)])
@@ -29,15 +30,15 @@ export default function Roles() {
   async function save(event: FormEvent<HTMLFormElement>, role: Role) {
     event.preventDefault()
     const values = new FormData(event.currentTarget)
-    setBusy(true); setError(null); setSuccess('')
+    setBusy(true); setError(null)
     try {
       await mutate('PUT', `/api/v1/roles/${role.id}/permissions`, { permissions: values.getAll('permissions'), concurrencyStamp: role.concurrencyStamp })
-      setSuccess(`${role.name} permissions saved. Changes apply to the next API request.`); setRevision(value => value + 1); await refresh()
+      notifySuccess(`${role.name} permissions saved. Changes apply to the next API request.`); setRevision(value => value + 1); await refresh()
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
   }
   return <><Heading eyebrow="Administration" title="Roles & permissions" detail="Define access once. Keep your team’s responsibilities clear." action={<Button variant="secondary" icon="refresh" disabled={loading || busy} onClick={() => setRevision(value => value + 1)}>Refresh roles</Button>} />
-    <ErrorMessage error={error} />{success && <Toast onDismiss={() => setSuccess('')}>{success}</Toast>}
+    <ErrorMessage error={error} />
     <div className="notice border-brand-100 bg-brand-50 text-brand-700"><Icon name="shield" /><div>User and role administration always require SuperAdmin. Permissions apply across all warehouses.</div></div>
     {loading ? <div className="panel"><LoadingSkeleton label="Loading roles…" rows={6} /></div> : roles.length === 0 ? <div className="panel"><EmptyState title={error ? 'Roles unavailable' : 'No roles available'} detail={error ? 'Check the connection and use Refresh roles to try again.' : 'Run the identity seed command to create the defined workspace roles.'} icon="shield" /></div> : <div className="space-y-3">{roles.map(role => <details key={`${role.id}-${role.concurrencyStamp}`} className="panel role-card">
       <summary><div><span className="stat-icon"><Icon name={role.isSystemAdmin ? 'shield' : 'users'} /></span><div><h2>{humanize(role.name)}</h2><p>{role.permissions.length} permission{role.permissions.length === 1 ? '' : 's'}{role.isSystemAdmin ? ' · Fixed full access' : ' · Customizable access'}</p></div></div><Icon name="down" width="18" height="18" /></summary>

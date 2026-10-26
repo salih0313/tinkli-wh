@@ -557,17 +557,11 @@ textarea:focus { outline: 3px solid #957bcf; outline-offset: 3px; }
   .po-editor .button, .po-editor .secondary { min-height:44px; }
 }
 
-/* Keep validation visible even when saving from the bottom of a long order. */
-.po-error-toast { position:fixed;right:20px;bottom:92px;z-index:40;width:min(480px,calc(100vw - 32px)); }
-.po-error-toast .toast { margin:0;align-items:flex-start;box-shadow:0 8px 32px #39265324;max-height:50vh;overflow:auto; }
-.po-error-toast .icon-button { color:#a12939; }
-.po-error-toast .button.secondary { margin-top:10px; }
 .po-order-fields { display:flex;flex-wrap:wrap;align-items:end;gap:12px 20px; }
 .po-order-fields > .field { flex:1 1 240px;max-width:440px; }
 /* Reserve both date columns together so intrinsic field widths cannot stack them. */
 .po-date-fields { display:grid;grid-template-columns:repeat(2,minmax(0,164px));align-items:end;gap:12px;flex:0 0 340px;max-width:100%; }
 @media(max-width:479px) {
-  .po-error-toast { right:16px;bottom:88px; }
   .po-date-fields { grid-template-columns:repeat(2,minmax(0,1fr));width:100%;flex-basis:100%;gap:8px; }
 }
 
@@ -608,3 +602,12 @@ textarea:focus { outline: 3px solid #957bcf; outline-offset: 3px; }
 /* Grid columns already define usable space for names, selections and searches. */
 .grid > .field[data-field-size=standard], .grid > .field[data-field-size=wide] { max-width:100%; }
 .po-date-fields > .field[data-field-size=date] { width:100%; }
+
+/* Shared notifications remain visible while scrolling, navigating and using dialogs. */
+.notification-viewport { position:fixed;right:16px;bottom:88px;z-index:1000;display:flex;flex-direction:column;gap:10px;width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 120px);overflow-y:auto;pointer-events:none;padding:4px; }
+.notification-viewport .toast { margin:0;align-items:flex-start;pointer-events:auto;box-shadow:0 8px 28px #39265326;flex-shrink:0; }
+.notification-viewport .toast > div { min-width:0;overflow-wrap:anywhere; }
+.notification-viewport .toast.error .icon-button { color:#a12939; }
+.toast-reference { display:block;font-size:11px;margin-top:6px;overflow-wrap:anywhere; }
+@media(max-width:479px) { .notification-viewport { right:8px;width:calc(100vw - 16px);bottom:88px; } }
+@media print { .notification-viewport { display:none !important; } }
