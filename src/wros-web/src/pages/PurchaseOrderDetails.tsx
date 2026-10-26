@@ -37,7 +37,7 @@ export default function PurchaseOrderDetails() {
       const document = await mutate<{ html: string }>('POST', `/api/v1/purchase-orders/${id}/print-document`, { rowVersion: order.rowVersion })
       popup.document.open(); popup.document.write(document.html); popup.document.close()
       // Dedicated print window offers Print / Save PDF after fonts and branding images load.
-      popup.focus(); notifySuccess('Purchase order print view opened.')
+      popup.focus(); notifySuccess('Print preview ready. Choose Save as PDF to attach the document to your supplier email.')
     } catch (failure) { popup.close(); setError(failure) } finally { setBusy(false) }
   }
   return <><div className="no-print"><Heading eyebrow="Purchasing" title={order?.number ?? 'Purchase order'} detail="Review the request, share with your supplier and track revisions." action={<Button variant="secondary" icon="refresh" disabled={loading || busy} onClick={() => setRevision(value => value + 1)}>Refresh</Button>} /><ErrorMessage error={error} /></div>

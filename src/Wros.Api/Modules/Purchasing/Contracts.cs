@@ -8,5 +8,5 @@ public sealed record VersionRequest([Required] string RowVersion);
 public sealed record OrderLineDto(Guid Id, Guid? ProductId, string Sku, string Name, decimal Quantity, Guid? SupplierProductId, SupplierCatalog.PricingSnapshot? Pricing);
 public sealed record OrderDto(Guid Id, string Number, Guid SupplierId, string SupplierCode, string SupplierName,
     DateOnly OrderDate, DateOnly? ExpectedDeliveryDate, string? Remarks, string Status, int Revision, string RowVersion,
-    DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, Guid? CreatedBy, Guid? UpdatedBy, OrderLineDto[] Lines, SupplierCatalog.PricingSummary Summary);
+    DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, Guid? CreatedBy, Guid? UpdatedBy, OrderLineDto[] Lines, SupplierCatalog.PricingSummary Summary, string? SupplierContactPerson = null, string? SupplierPhone = null, string? SupplierEmail = null, string? SupplierAddress = null);
 public sealed record RevisionDto(int Revision, string Action, DateTimeOffset Timestamp, Guid? ActorId, string Snapshot);

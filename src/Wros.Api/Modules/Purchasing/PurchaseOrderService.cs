@@ -139,5 +139,5 @@ public sealed class PurchaseOrderService(WrosDbContext db, AuditService audit, D
     private IQueryable<PurchaseOrder> Query() => db.PurchaseOrders.Include(x => x.Supplier).Include(x => x.Lines).ThenInclude(x => x.Product).AsSplitQuery();
     private static OrderDto ToDto(PurchaseOrder x) => new(x.Id, x.Number, x.SupplierId, x.Supplier.Code, x.Supplier.Name,
         x.OrderDate, x.ExpectedDeliveryDate, x.Remarks, x.Status, x.Revision, Convert.ToBase64String(x.RowVersion), x.CreatedAt, x.UpdatedAt, x.CreatedBy, x.UpdatedBy,
-        x.Lines.OrderBy(l => l.Position).Select(l => new OrderLineDto(l.Id, l.ProductId, ReadPricing(l)?.SupplierProductCode ?? l.Product?.Code ?? "", ReadPricing(l)?.ProductName ?? l.Product?.Name ?? "", l.Quantity, l.SupplierProductId, ReadPricing(l))).ToArray(), Summary(x));
+        x.Lines.OrderBy(l => l.Position).Select(l => new OrderLineDto(l.Id, l.ProductId, ReadPricing(l)?.SupplierProductCode ?? l.Product?.Code ?? "", ReadPricing(l)?.ProductName ?? l.Product?.Name ?? "", l.Quantity, l.SupplierProductId, ReadPricing(l))).ToArray(), Summary(x), x.Supplier.ContactPerson, x.Supplier.Phone, x.Supplier.Email, x.Supplier.Address);
 }
