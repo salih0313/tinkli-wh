@@ -26,7 +26,10 @@ public sealed partial class ReceivingService
             {
                 PurchaseOrderService.Quantity(lot.Quantity, true);
                 if (lot.Quantity > 0 && line.Product.TrackExpiry && lot.Expiry is null) throw new ApiProblemException(400, $"Expiry is required for {line.Product.Code}.");
-                if (lot.Allocations.Sum(x => x.Quantity) != lot.Quantity) throw new ApiProblemException(400, $"Allocate the full quantity for every lot of {line.Product.Code}.");
+                var allocated = lot.Allocations.Sum(x => x.Quantity);
+                if (allocated != lot.Quantity)
+                    throw new ApiProblemException(400, FormattableString.Invariant(
+                        $"Cannot post delivery note. Product {line.Product.Code} ({line.Product.Name}), lot {line.Lots.IndexOf(lot) + 1}: received {lot.Quantity:0} units, allocated {allocated:0} units. Edit the draft and adjust rack/location allocations to total exactly {lot.Quantity:0} units for this lot, then save and post again. No stock was added."));
                 foreach (var allocation in lot.Allocations)
                 {
                     var warehouseId = warehouses[(allocation.RackId, allocation.LocationId)];

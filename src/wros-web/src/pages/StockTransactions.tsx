@@ -164,9 +164,7 @@ function TransactionDetails({ kind, id }: { kind: Kind; id: string }) {
             <h2 className="text-lg font-semibold">{r.data.number}</h2>
             <p>{new Date(r.data.completedAt).toLocaleString()}</p>
             <p>{r.data.remarks}</p>
-            <p className="break-all text-sm">
-              Actor: {r.data.actorId} · Correlation: {r.data.correlationId}
-            </p>
+
             <DataTable
               items={r.data.lines ?? []}
               getKey={(l) => l.id}
@@ -174,11 +172,11 @@ function TransactionDetails({ kind, id }: { kind: Kind; id: string }) {
               columns={[
                 {
                   key: 'sku',
-                  label: 'Product / lot',
+                  label: 'Product',
                   render: (l) => (
                     <div className="break-all">
                       <strong>{l.sku}</strong>
-                      <p>{l.stockLotId}</p>
+
                     </div>
                   ),
                 },
@@ -188,7 +186,7 @@ function TransactionDetails({ kind, id }: { kind: Kind; id: string }) {
                   render: (l) => (
                     <div className="break-all">
                       {l.sourcePath}
-                      <p className="field-hint">{l.rackId}</p>
+
                     </div>
                   ),
                 },
@@ -390,7 +388,7 @@ function TransactionForm({
                       {options.map((b) => (
                         <option key={b.id} value={b.id}>
                           {b.sku} ·{' '}
-                          {b.supplierBatch ?? b.stockLotId.slice(0, 8)} ·{' '}
+                          {b.supplierBatch ?? 'No batch'} ·{' '}
                           {b.path} · {b.quantity} units · expiry{' '}
                           {b.expiry ?? 'none'}
                         </option>

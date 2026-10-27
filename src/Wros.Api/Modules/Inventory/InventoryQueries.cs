@@ -82,9 +82,12 @@ public sealed class InventoryQueries(WrosDbContext db, IOptions<InventoryOptions
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var q = Filter(f).GroupBy(b => new { b.StockLot.ProductId, b.StockLot.Product.Code, b.StockLot.Product.Name })
             .Select(g => new { g.Key.ProductId, Sku = g.Key.Code, Product = g.Key.Name, Physical = g.Sum(b => b.Quantity), Sellable = g.Sum(b => b.StockLot.Product.IsActive && (b.StockLot.Expiry == null || b.StockLot.Expiry >= today) ? b.Quantity : 0) });
+        var ordered = f.Sort == "quantity"
+            ? q.OrderByDescending(x => x.Physical).ThenBy(x => x.ProductId)
+            : q.OrderBy(x => x.Sku).ThenBy(x => x.ProductId);
         return new
         {
-            Items = await q.OrderBy(x => x.Sku).ThenBy(x => x.ProductId).Skip((f.Page - 1) * f.PageSize).Take(f.PageSize).ToArrayAsync(),
+            Items = await ordered.Skip((f.Page - 1) * f.PageSize).Take(f.PageSize).ToArrayAsync(),
             f.Page,
             f.PageSize,
             Total = await q.CountAsync()

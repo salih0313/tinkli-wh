@@ -179,8 +179,7 @@ export default function Integration() {
                     label: 'Client',
                     render: (c) => (
                       <>
-                        <strong>{c.id}</strong>
-                        <p>{c.name}</p>
+                        <strong>{c.name}</strong>
                       </>
                     ),
                   },
@@ -277,7 +276,7 @@ export default function Integration() {
                       label: 'Client / external ID',
                       render: (m) => (
                         <div className="break-all">
-                          <strong>{m.clientId}</strong>
+                          <strong>{status.data?.clients.find(client => client.id === m.clientId)?.name ?? 'Integration client'}</strong>
                           <p>{m.externalProductId}</p>
                         </div>
                       ),
@@ -344,7 +343,7 @@ export default function Integration() {
                       <option value="">Choose client</option>
                       {status.data.clients.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.id}
+                          {c.name}
                         </option>
                       ))}
                     </Select>
@@ -414,7 +413,7 @@ export default function Integration() {
                     label: 'Client / order',
                     render: (d) => (
                       <>
-                        <strong>{d.clientId}</strong>
+                        <strong>{status.data?.clients.find(client => client.id === d.clientId)?.name ?? 'Integration client'}</strong>
                         <p>{d.externalOrderId}</p>
                       </>
                     ),
@@ -425,7 +424,7 @@ export default function Integration() {
                     render: (d) => (
                       <div className="break-all">
                         {d.eventId}
-                        <p className="field-hint">{d.correlationId}</p>
+
                       </div>
                     ),
                   },
@@ -460,8 +459,8 @@ export default function Integration() {
                     label: 'Snapshot / client',
                     render: (s) => (
                       <div className="break-all">
-                        <strong>{s.clientId}</strong>
-                        <p>{s.id}</p>
+                        <strong>{status.data?.clients.find(client => client.id === s.clientId)?.name ?? 'Integration client'}</strong>
+
                       </div>
                     ),
                   },

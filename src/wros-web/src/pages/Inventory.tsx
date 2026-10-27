@@ -1,3 +1,6 @@
+import { useSearchParams } from 'react-router-dom'
+import { InventoryNav } from '../features/inventory/InventoryNav'
+import { Icon } from '../components/ui/Icon'
 import { useEffect, useState } from 'react'
 import { useLookup } from '../hooks/useLookup'
 import type { MasterRecord } from '../features/master-data/types'
@@ -15,12 +18,14 @@ export default function Inventory({
 }: {
   expiryOnly?: boolean
 }) {
+  const [routeParams] = useSearchParams()
+  const [revision, setRevision] = useState(0)
   const [page, setPage] = useState(1),
     [search, setSearch] = useState(''),
     [expiry, setExpiry] = useState(expiryOnly ? 'near' : 'all'),
     [sort, setSort] = useState('sku'),
-    [filters, setFilters] = useState<Record<string, string>>({}),
-    [summary, setSummary] = useState(false)
+    [filters, setFilters] = useState<Record<string, string>>({ warehouseId: routeParams.get('warehouseId') ?? '' }),
+    [summary, setSummary] = useState(!expiryOnly)
   const warehouses = useLookup<MasterRecord>('/api/v1/warehouses'),
     areas = useLookup<MasterRecord>('/api/v1/areas'),
     racks = useLookup<MasterRecord>('/api/v1/racks')
@@ -46,13 +51,14 @@ export default function Inventory({
   return (
     <>
       <Heading
-        title={expiryOnly ? 'Expiry alerts' : 'Inventory explorer'}
-        detail="Physical units remain accounted for. Expired and inactive products are excluded from sellable units. FIFO and FEFO are suggestions only."
+        title={expiryOnly ? 'Expiry alerts' : 'Products & stock'}
+        detail={expiryOnly ? 'Review batches and locations that need attention before stock expires.' : 'One product, one total. Expand a row to see stock across receipts and locations.'}
         action={
           <Button
             icon="refresh"
             variant="secondary"
             onClick={() => {
+              setRevision(value => value + 1)
               refresh()
               products.refresh()
               warehouses.refresh()
@@ -64,10 +70,12 @@ export default function Inventory({
           </Button>
         }
       />
-      <section className="panel p-3">
+      <InventoryNav />
+      <section className="panel inventory-filters">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="SKU, name, barcode or brand" width="wide">
+          <Field label="Find a product" width="wide">
             <Input
+              placeholder="Search SKU, name, barcode or brand…"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value)
@@ -100,8 +108,8 @@ export default function Inventory({
               }}
             >
               <option value="sku">SKU</option>
-              <option value="fifo">FIFO · oldest receipt</option>
-              <option value="fefo">FEFO · earliest expiry</option>
+              {!summary && <option value="fifo">FIFO · oldest receipt</option>}
+              {!summary && <option value="fefo">FEFO · earliest expiry</option>}
               <option value="quantity">Largest quantity</option>
             </Select>
           </Field>
@@ -112,11 +120,9 @@ export default function Inventory({
             />
           </Field>
         </div>
-        <details className="mt-4">
-          <summary className="cursor-pointer py-3">
-            Filter by warehouse, area, rack or lot
-          </summary>
-          <div className="grid gap-3 sm:grid-cols-2">
+        <details className="inventory-advanced">
+          <summary>Filter by warehouse, area or rack</summary>
+          <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Warehouse">
               <Select
                 value={filters.warehouseId ?? ''}
@@ -188,26 +194,12 @@ export default function Inventory({
                   ))}
               </Select>
             </Field>
-            <Field label="Lot ID" width="wide">
-              <Input
-                placeholder="UUID (optional)"
-                value={filters.lotId ?? ''}
-                onChange={(e) => change('lotId', e.target.value)}
-              />
-            </Field>
           </div>
         </details>
-        <label className="mt-4 flex min-h-11 items-center gap-3">
-          <input
-            type="checkbox"
-            checked={summary}
-            onChange={(e) => {
-              setSummary(e.target.checked)
-              setPage(1)
-            }}
-          />
-          Group by product; expand for lot locations
-        </label>
+        <div className="inventory-filter-footer">
+          <span>{filters.warehouseId ? `Warehouse: ${warehouses.items.find(w => w.id === filters.warehouseId)?.name ?? 'Selected warehouse'} · ` : ''}Totals reflect your selected filters.</span>
+          <Button variant="ghost" onClick={() => { setSearch(''); setExpiry(expiryOnly ? 'near' : 'all'); setSort('sku'); setFilters({}); setPage(1) }}>Clear filters</Button>
+        </div>
       </section>
       <ErrorMessage
         error={
@@ -218,20 +210,29 @@ export default function Inventory({
           racks.error
         }
       />
-      <section className="panel">
+      <section className="panel inventory-results" aria-busy={summary ? products.loading : loading}>
+        <div className="inventory-result-toolbar">
+          <h2>{expiryOnly ? 'Stock to review' : 'Current inventory'} <span>({((summary ? products.data : data)?.total ?? 0).toLocaleString()} {summary ? 'products' : 'placements'})</span></h2>
+          <div className="inventory-view-switch" role="group" aria-label="Inventory view">
+            <Button variant="ghost" aria-pressed={summary} onClick={() => { setSummary(true); setSort('sku'); setPage(1) }}>Products</Button>
+            <Button variant="ghost" aria-pressed={!summary} onClick={() => { setSummary(false); setPage(1) }}>Locations</Button>
+          </div>
+        </div>
         {(summary ? products.loading : loading) ? (
           <LoadingSkeleton />
-        ) : summary ? (
+        ) : (summary ? products.error : error) ? (<EmptyState title="Inventory unavailable" detail="Use Refresh to try again." />) : summary && products.data?.items.length ? (
           <>
+            <div className="inventory-product-head" aria-hidden="true"><span>Product / SKU</span><span>On hand</span><span>Sellable</span><span>Unavailable</span><span /></div>
             {products.data?.items.map((p) => (
               <ProductGroup
                 key={p.productId}
                 product={p}
                 query={params.toString()}
+                revision={revision}
               />
             ))}
           </>
-        ) : data?.items.length ? (
+        ) : !summary && data?.items.length ? (
           <StockTable items={data.items} />
         ) : (
           <EmptyState
@@ -240,10 +241,11 @@ export default function Inventory({
           />
         )}
       </section>
+      <p className="inventory-footnote">On hand includes all physical stock. Unavailable units are expired or belong to inactive products. Sellable stock excludes these units.</p>
       <Pagination
         page={page}
         total={(summary ? products.data : data)?.total ?? 0}
-        noun="results"
+        noun={summary ? 'products' : 'placements'}
         onPage={setPage}
         disabled={summary ? products.loading : loading}
       />
@@ -253,25 +255,26 @@ export default function Inventory({
 function ProductGroup({
   product: p,
   query,
+  revision,
 }: {
   product: ProductSummary
   query: string
+  revision: number
 }) {
   const [open, setOpen] = useState(false)
   return (
     <details
-      className="border-b py-4"
+      className="inventory-product"
       onToggle={(e) => setOpen(e.currentTarget.open)}
     >
-      <summary className="cursor-pointer py-3">
-        <strong>
-          {p.sku} · {p.product}
-        </strong>
-        <span className="block text-sm">
-          {p.physical} physical / {p.sellable} sellable units
-        </span>
+      <summary className="inventory-product-row">
+        <span className="inventory-product-name"><strong>{p.product}</strong><small>{p.sku}</small></span>
+        <span className="inventory-number"><small>On hand</small><strong>{p.physical.toLocaleString()}</strong></span>
+        <span className="inventory-number sellable"><small>Sellable</small><strong>{p.sellable.toLocaleString()}</strong></span>
+        <span className="inventory-number"><small>Unavailable</small><strong>{(p.physical - p.sellable).toLocaleString()}</strong></span>
+        <span className="inventory-expand"><Icon name="chevron" /><span className="sr-only">View stock locations for {p.product}</span></span>
       </summary>
-      {open && <ProductLots productId={p.productId} query={query} />}
+      {open && <div className="inventory-product-detail"><p className="inventory-detail-hint">Remaining stock by receipt and location · quantities included in the product total</p><ProductLots key={revision} productId={p.productId} query={query} /></div>}
     </details>
   )
 }
@@ -294,14 +297,15 @@ function ProductLots({
       <ErrorMessage error={r.error} />
       {r.loading ? (
         <LoadingSkeleton />
-      ) : (
-        <StockTable items={r.data?.items ?? []} />
+      ) : r.error ? <EmptyState title="Locations unavailable" detail="Refresh inventory to try again." /> : !r.data?.items.length ? <EmptyState title="No remaining stock" detail="This product has no stock matching the selected filters." /> : (
+        <StockTable items={r.data.items} />
       )}
       <Pagination
         page={page}
         total={r.data?.total ?? 0}
         noun="placements"
         onPage={setPage}
+        disabled={r.loading}
       />
     </>
   )

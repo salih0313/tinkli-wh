@@ -17,7 +17,7 @@ function NotificationItem({ item }: { item: Notification }) {
   return <div ref={ref} className={`toast notice ${item.tone}`} role={item.tone === 'error' ? 'alert' : 'status'}
     onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
     onFocusCapture={() => setPaused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false) }}>
-    <Icon name={item.tone === 'error' ? 'alert' : 'check'} /><div>{item.message}{item.reference && <small className="toast-reference">Reference: {item.reference}</small>}</div>
+    <Icon name={item.tone === 'error' ? 'alert' : 'check'} /><div>{item.message}</div>
     <IconButton label="Dismiss notification" icon="close" onClick={() => dismissNotification(item.id)} />
   </div>
 }
